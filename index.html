@@ -1,0 +1,2178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>GymStreak</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <style>
+    :root{--bg:#0f1117;--bg2:#1a1d27;--bg3:#22263a;--bd:rgba(255,255,255,.08);--tx:#ffffff;--tx2:#6b7280;--mt:#6b7280;--am:#f5a623;--ams:#ffc966;--amd:#d48e1a;--amg:rgba(245,166,35,.25);--bl:#60a5fa;--bls:#93c5fd;--ok:#22c55e;--oks:#4ade80;--gd:#f5a623;--rd:16px;--rds:12px;--pill:50px;--sh:none}
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%;background:var(--bg);color:var(--tx);font-family:"Nunito",sans-serif;-webkit-font-smoothing:antialiased}
+    body{display:flex;justify-content:center}
+    .app{width:100%;min-height:100vh;position:relative;overflow-x:hidden}
+    .hidden{display:none !important}
+
+    /* ── ONBOARDING (Multi-step) ── */
+    .onboarding{min-height:100vh;background:var(--bg);position:relative;overflow:hidden}
+    .ob-progress{position:absolute;top:0;left:0;right:0;height:3px;background:var(--bg3);z-index:5}
+    .ob-progress-fill{height:100%;background:var(--am);transition:width 350ms cubic-bezier(.4,0,.2,1);border-radius:0 2px 2px 0}
+    .ob-viewport{position:relative;width:100%;min-height:100vh;overflow:hidden}
+    .ob-step{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;opacity:0;transform:translateX(60px);transition:opacity 300ms ease,transform 300ms ease;pointer-events:none;overflow-y:auto}
+    .ob-step.active{opacity:1;transform:translateX(0);pointer-events:auto;position:relative}
+    .ob-step.exit-left{opacity:0;transform:translateX(-60px);pointer-events:none}
+    .ob-step-inner{width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center}
+    .ob-back{position:absolute;top:20px;left:20px;border:none;background:transparent;color:var(--tx2);font-size:1.2rem;cursor:pointer;z-index:6;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;transition:background 150ms}
+    .ob-back:hover{background:rgba(255,255,255,.06)}
+
+    /* Step 1 */
+    .ob-logo{display:flex;align-items:center;gap:8px;font-size:1.6rem;font-weight:900;color:#fff;margin-bottom:48px}
+    .ob-logo i{color:var(--am);font-size:1.3rem}
+    .ob-headline{font-size:1.6rem;font-weight:900;color:#fff;text-align:center;line-height:1.25;margin-bottom:8px}
+    @media(min-width:400px){.ob-headline{font-size:1.8rem}}
+    .ob-subline{font-size:.9rem;font-weight:700;color:var(--tx2);text-align:center;margin-bottom:36px}
+    .ob-btn-email{width:100%;border:none;border-radius:var(--pill);padding:16px;font-size:.95rem;font-weight:800;color:#0f1117;background:var(--am);cursor:pointer;font-family:inherit;transition:transform 80ms,filter 200ms;margin-bottom:20px}
+    .ob-btn-email:hover{filter:brightness(1.08)}
+    .ob-btn-email:active{transform:translateY(2px)}
+    .ob-bottom-link{color:var(--tx2);font-size:.82rem;font-weight:700;text-align:center}
+    .ob-bottom-link span{color:var(--am);cursor:pointer}
+
+    /* Step 2 */
+    .ob-form-title{font-size:1.25rem;font-weight:900;color:#fff;text-align:center;margin-bottom:6px}
+    .ob-form-sub{font-size:.84rem;font-weight:700;color:var(--tx2);text-align:center;margin-bottom:24px}
+    .auth-shell{width:100%;padding:22px 18px;border-radius:22px;border:1px solid var(--bd);transition:border-color 180ms,background 180ms,box-shadow 180ms}
+    .auth-shell.auth-register{background:linear-gradient(180deg,rgba(245,166,35,.08),rgba(245,166,35,.02));border-color:rgba(245,166,35,.24);box-shadow:0 24px 60px rgba(245,166,35,.08)}
+    .auth-shell.auth-login{background:linear-gradient(180deg,rgba(96,165,250,.08),rgba(96,165,250,.02));border-color:rgba(96,165,250,.22);box-shadow:0 24px 60px rgba(96,165,250,.08)}
+    .auth-badge{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;font-size:.68rem;font-weight:900;letter-spacing:1.1px;text-transform:uppercase;margin:0 auto 14px}
+    .auth-shell.auth-register .auth-badge{background:rgba(245,166,35,.14);color:var(--am)}
+    .auth-shell.auth-login .auth-badge{background:rgba(96,165,250,.14);color:var(--bls)}
+    .fg{display:flex;flex-direction:column;gap:5px;width:100%}
+    .fl{font-size:.72rem;font-weight:800;color:var(--tx2);text-transform:uppercase;letter-spacing:1.2px}
+    .fg.hidden-field{display:none}
+    .fi{width:100%;background:var(--bg3);border:1px solid var(--bd);color:var(--tx);padding:14px 16px;border-radius:var(--rds);font-size:.95rem;font-weight:700;font-family:inherit;outline:none;transition:border-color 150ms,box-shadow 150ms}
+    .fi::placeholder{color:rgba(107,114,128,.7);font-weight:600}
+    .fi:focus{border-color:var(--am);box-shadow:0 0 0 3px rgba(245,166,35,.12)}
+    .fi.err{border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.12)}
+    .fi-msg{min-height:18px;font-size:.74rem;font-weight:700;color:#ef4444}
+    .pw-wrap{position:relative}
+    .pw-wrap .fi{padding-right:48px}
+    .pw-toggle{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--tx2);font-size:1rem;cursor:pointer;padding:4px}
+    .ob-btn-next{width:100%;border:none;border-radius:var(--pill);padding:16px;font-size:1rem;font-weight:800;color:#0f1117;background:var(--am);cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:.8px;transition:transform 80ms,filter 200ms;margin-top:8px}
+    .ob-btn-next:hover{filter:brightness(1.08)}
+    .ob-btn-next:active{transform:translateY(2px)}
+    .ob-btn-next:disabled{opacity:.4;cursor:default;filter:none}
+    .ob-btn-next.is-disabled{opacity:.4;cursor:default;filter:none}
+    .ob-btn-next.login-mode{background:linear-gradient(135deg,#60a5fa,#3b82f6);color:#fff}
+    .ob-btn-next.register-mode{background:linear-gradient(135deg,#f5a623,#ffcf66);color:#0f1117}
+    .auth-switch{margin-top:10px;text-align:center;font-size:.82rem;font-weight:700;color:var(--tx2)}
+    .auth-switch span{color:#fff}
+    .auth-switch a{color:var(--am);cursor:pointer;text-decoration:none;font-weight:900}
+    .auth-shell.auth-login .auth-switch a{color:var(--bls)}
+
+    /* Step 3 – Character */
+    .char-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;margin-bottom:24px}
+    .char-card{background:var(--bg2);border:2px solid var(--bd);border-radius:var(--rd);padding:16px 12px;text-align:center;cursor:pointer;transition:border-color 250ms,box-shadow 250ms,background 250ms;position:relative}
+    .char-card:hover{border-color:rgba(255,255,255,.15)}
+    .char-card.sel{border-color:var(--am);box-shadow:0 0 24px rgba(245,166,35,.2);background:rgba(245,166,35,.04)}
+    .char-card-check{position:absolute;top:10px;right:10px;width:24px;height:24px;border-radius:50%;background:var(--am);display:grid;place-items:center;font-size:.7rem;color:#0f1117;opacity:0;transform:scale(.5);transition:opacity 200ms,transform 200ms}
+    .char-card.sel .char-card-check{opacity:1;transform:scale(1)}
+    .character-circle{border-radius:50%;background:#0f1117;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .character-circle img{width:100%;height:100%;object-fit:contain;display:block;mix-blend-mode:normal !important;opacity:1 !important;filter:none !important}
+    .char-card .character-circle{width:130px;height:130px;margin:0 auto 8px}
+    .char-card-name{font-weight:900;font-size:.95rem;color:#fff}
+
+    /* Step 4 – Rhythm */
+    .rhythm-list{display:flex;flex-direction:column;gap:10px;width:100%;margin-bottom:24px}
+    .rhythm-card{width:100%;background:var(--bg2);border:1px solid var(--bd);border-left:4px solid transparent;border-radius:var(--rds);padding:16px 18px;cursor:pointer;transition:border-color 200ms,background 200ms;text-align:left}
+    .rhythm-card:hover{border-color:rgba(255,255,255,.12)}
+    .rhythm-card.sel{border-left-color:var(--am);background:rgba(245,166,35,.05);border-color:rgba(245,166,35,.15);border-left-color:var(--am)}
+    .rhythm-card-title{font-weight:900;font-size:.95rem;color:#fff}
+    .rhythm-card-desc{font-size:.78rem;font-weight:600;color:var(--tx2);margin-top:3px}
+
+    /* Step 5 – Ready */
+    .ready-mascot-circle{width:180px;height:180px;position:relative;z-index:2;margin-bottom:8px}
+    .ready-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(245,166,35,.2) 0%,transparent 70%);animation:glowPulse 2s ease-in-out infinite alternate;z-index:1}
+    .ready-mascot-wrap{position:relative;display:flex;justify-content:center;align-items:center;min-height:220px;margin-bottom:8px}
+    .ready-charname{font-size:1rem;font-weight:800;color:var(--am);text-transform:uppercase;letter-spacing:2px;margin-bottom:16px}
+    .ready-headline{font-size:1.5rem;font-weight:900;color:#fff;text-align:center;margin-bottom:6px}
+    .ready-sub{font-size:.88rem;font-weight:700;color:var(--tx2);text-align:center;margin-bottom:32px}
+
+    /* ── STICKY TOP BAR ── */
+    .topbar{position:sticky;top:0;z-index:15;background:var(--bg);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd)}
+    .topbar-brand{font-size:1.1rem;font-weight:900;color:#fff;display:flex;align-items:center;gap:6px}
+    .topbar-brand i{font-size:.95rem;color:var(--am)}
+    .topbar-stats{display:flex;gap:6px;align-items:center}
+    .stat-pill{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:999px;font-weight:800;font-size:.76rem;background:var(--bg2);border:1px solid var(--bd)}
+    .stat-pill.sp-streak{color:var(--am)}
+    .stat-pill.sp-streak i{color:var(--am)}
+    .stat-pill.sp-coins{color:var(--gd)}
+    .stat-pill.sp-coins i{color:var(--gd)}
+    .stat-pill.sp-freeze{color:var(--bl)}
+    .stat-pill.sp-freeze i{color:var(--bl)}
+    .topbar-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid rgba(245,166,35,.35);margin-left:4px}
+    .gsi-warn{position:fixed;top:0;left:0;right:0;padding:8px 16px;background:#f5a623;color:#0f1117;font-size:.78rem;font-weight:800;text-align:center;z-index:50;display:none}
+    .gsi-warn.show{display:block}
+
+    /* ── LAYOUT ── */
+    .mw{min-height:calc(100vh - 52px);padding:16px 16px 100px;background:var(--bg)}
+    .cc{width:100%;max-width:600px;margin:0 auto}
+    @media(min-width:768px){.mw{padding:24px 32px 110px}.cc{max-width:660px}}
+    .dcard{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rd);padding:20px 18px}
+    @media(min-width:768px){.dcard{padding:26px 24px}}
+    .sec-title{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:2.5px;color:var(--mt);margin-bottom:12px}
+
+    /* ── LEVEL BANNER ── */
+    .lvl-banner{background:var(--bg2);border:1px solid var(--bd);border-left:4px solid var(--am);border-radius:var(--rd);padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+    .lvl-text{font-size:1rem;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:1px}
+    .lvl-sub{font-size:.76rem;font-weight:700;color:var(--tx2);margin-top:2px}
+    .lvl-badge{width:44px;height:44px;border-radius:50%;background:rgba(245,166,35,.12);display:grid;place-items:center;font-size:1.3rem;color:var(--am)}
+
+    /* ── MASCOT ── */
+    .mwrap{display:flex;justify-content:center;align-items:center;min-height:200px;position:relative;margin:8px 0}
+    .mascot-circle{width:160px;height:160px;position:relative;z-index:2;cursor:pointer;animation:mbob 2.5s ease-in-out infinite alternate;transition:filter 400ms ease}
+    @media(min-width:768px){.mascot-circle{width:200px;height:200px}}
+    .mascot-circle:hover{filter:brightness(1.15) drop-shadow(0 0 25px rgba(245,166,35,.4));transform:scale(1.08) translateY(-5px)}
+    .mascot-circle:active{transform:scale(.92) translateY(3px)}
+    .mascot-celebrate{animation:celebJump 800ms ease !important}
+    @keyframes celebJump{0%{transform:translateY(0) scale(1) rotate(0)}30%{transform:translateY(-35px) scale(1.1,.9) rotate(-5deg)}50%{transform:translateY(-40px) scale(.95,1.05) rotate(3deg)}70%{transform:translateY(-10px) scale(1.05,.95) rotate(-2deg)}100%{transform:translateY(0) scale(1) rotate(0)}}
+    @keyframes mbob{0%{transform:translateY(0)}100%{transform:translateY(-8px)}}
+    .mascot-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:170px;height:170px;border-radius:50%;background:radial-gradient(circle,rgba(245,166,35,.18) 0%,transparent 70%);animation:glowPulse 2s ease-in-out infinite alternate;z-index:1;pointer-events:none}
+    @media(min-width:768px){.mascot-glow{width:210px;height:210px}}
+    @keyframes glowPulse{0%{opacity:.12}100%{opacity:.3}}
+
+    /* ── HEATMAP OVERLAY ── */
+    .hm-svg{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none;overflow:visible}
+    .hm-region{fill:transparent;opacity:0;transition:fill 800ms ease,opacity 800ms ease}
+    .hm-region.hm-hot{fill:#FF9900;opacity:.55}
+    .hm-region.hm-med{fill:#E07A1A;opacity:.3}
+    .hm-region.hm-cold{fill:#1a1525;opacity:.42}
+    .hm-region.hm-passive{fill:#FF9900;opacity:0;transition:fill 800ms ease,opacity 800ms ease}
+    .hm-region.hm-passive.hm-glow-lo{opacity:.08}
+    .hm-region.hm-passive.hm-glow-md{opacity:.15}
+    .hm-region.hm-passive.hm-glow-hi{opacity:.25}
+    .hm-region.hm-aura{fill:#FF9900;opacity:0;transition:opacity 800ms ease}
+    .hm-panel{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rd);padding:18px 16px;margin-top:14px}
+    .hm-panel-title{font-size:.72rem;font-weight:800;color:var(--tx2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+    .hm-panel-title i{color:var(--am);font-size:.85rem}
+    .hm-legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--bd)}
+    .hm-leg-item{display:flex;align-items:center;gap:6px;font-size:.72rem;font-weight:700;color:var(--tx2)}
+    .hm-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .hm-dot.hot{background:#FF9900;box-shadow:0 0 8px rgba(255,153,0,.6)}
+    .hm-dot.med{background:#E07A1A}
+    .hm-dot.cold{background:#3a3544}
+    .hm-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+    .hm-bar-row:last-child{margin-bottom:0}
+    .hm-bar-label{width:90px;font-size:.75rem;font-weight:700;color:var(--tx2);flex-shrink:0;text-align:right}
+    .hm-bar-track{flex:1;height:7px;border-radius:4px;background:var(--bg3);overflow:hidden;border:1px solid var(--bd)}
+    .hm-bar-fill{height:100%;border-radius:4px;transition:width 800ms cubic-bezier(.2,.9,.25,1),background 800ms ease;min-width:0}
+    .hm-bar-count{width:52px;font-size:.72rem;font-weight:800;color:var(--tx);text-align:left;flex-shrink:0}
+
+    /* ── STREAK ── */
+    .sn{text-align:center;font-size:3.2rem;font-weight:900;line-height:1;letter-spacing:1px;color:#fff;-webkit-text-fill-color:#fff;transition:transform 200ms}
+    .sn.pulse{animation:sp 450ms ease}
+    @keyframes sp{0%{transform:scale(1)}35%{transform:scale(1.22)}100%{transform:scale(1)}}
+    .sl{text-align:center;margin:4px 0 0;color:var(--tx2);font-weight:800;text-transform:uppercase;font-size:.68rem;letter-spacing:2.5px}
+    .tmr{margin:16px 0 14px;text-align:center;color:var(--tx);background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rds);padding:12px 14px;font-weight:800;font-size:.88rem}
+    .tmr-ok{color:var(--ok)}
+    .cbtn{width:100%;border:none;border-radius:var(--pill);padding:16px;font-size:1rem;font-weight:800;cursor:pointer;transition:transform 80ms,filter 200ms;color:#0f1117;background:var(--am);position:relative;overflow:hidden;font-family:inherit;text-transform:uppercase;letter-spacing:.8px}
+    .cbtn.done{background:var(--ok);color:#fff}
+    .cbtn:hover{filter:brightness(1.08)}
+    .cbtn:active{transform:translateY(2px)}
+    .cbtn:disabled{cursor:default;opacity:.4}
+    .cbtn.burst::after{content:"";position:absolute;inset:0;border-radius:inherit;background:radial-gradient(circle,rgba(245,166,35,.5),transparent 70%);animation:bf 600ms ease forwards;pointer-events:none}
+    @keyframes bf{0%{transform:scale(.3);opacity:1}100%{transform:scale(2.4);opacity:0}}
+    .ms{margin-top:18px}.msh{display:flex;justify-content:space-between;font-size:.76rem;color:var(--tx2);font-weight:800;margin-bottom:7px}
+    .pbg{width:100%;height:8px;border-radius:999px;background:var(--bg3);overflow:hidden;border:1px solid var(--bd)}
+    .pfl{height:100%;width:0;border-radius:999px;background:var(--am);transition:width 650ms cubic-bezier(.2,.9,.25,1)}
+
+    /* ── MISSIONS ── */
+    .mission-section{margin-top:16px}
+    .mission-card{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rd);padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:14px}
+    .mission-icon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:1.2rem;flex-shrink:0}
+    .mission-icon.active{background:rgba(245,166,35,.1);color:var(--am)}
+    .mission-icon.locked{background:var(--bg3);color:var(--mt)}
+    .mission-body{flex:1;min-width:0}
+    .mission-name{font-weight:800;font-size:.88rem;color:#fff}
+    .mission-name.locked{color:var(--mt)}
+    .mission-desc{font-size:.74rem;color:var(--mt);font-weight:600;margin-top:2px}
+    .mission-bar{height:5px;border-radius:999px;background:var(--bg3);margin-top:8px;overflow:hidden}
+    .mission-bar-fill{height:100%;border-radius:999px;background:var(--am);transition:width 500ms ease}
+    .mission-reward{flex-shrink:0;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:1.1rem}
+    .mission-reward.active{background:rgba(245,166,35,.1);color:var(--am)}
+    .mission-reward.locked{background:var(--bg3);color:var(--mt)}
+    .mission-countdown{font-size:.68rem;color:var(--am);font-weight:800;margin-top:4px}
+
+    /* ── TABS ── */
+    .tabs{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--bd);display:grid;grid-template-columns:repeat(5,1fr);padding:4px 4px 6px;z-index:20}
+    @supports(padding-bottom: env(safe-area-inset-bottom)){.tabs{padding-bottom:calc(6px + env(safe-area-inset-bottom))}}
+    .tbn{border:none;background:transparent;color:var(--mt);border-radius:0;padding:8px 4px 4px;font-weight:800;font-size:.62rem;cursor:pointer;transition:color 150ms;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative}
+    .tbn i{font-size:1.05rem;transition:color 150ms}
+    .tbn.act{color:var(--am)}
+    .tbn.act i{color:var(--am)}
+    .tbn.act::after{content:"";position:absolute;bottom:0;left:25%;right:25%;height:2px;border-radius:1px;background:var(--am)}
+
+    /* ── LEADERBOARD ── */
+    .lb{display:grid;gap:8px;margin-top:10px}
+    .lr{display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:10px;padding:14px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rds)}
+    .lr.me{border-color:rgba(245,166,35,.2);background:rgba(245,166,35,.04)}
+    .rk{font-weight:900;color:var(--tx2);text-align:center;font-size:.88rem}
+    .rm{font-size:1.1rem}
+    .ln{font-weight:800;color:#fff;font-size:.9rem}
+    .ls{font-weight:900;color:var(--am);font-size:.9rem}
+    .yt{font-size:.66rem;color:var(--am);font-weight:700;margin-left:4px;opacity:.8}
+
+    /* ── SHOP ── */
+    .ss{margin-bottom:22px}
+    .cbn{display:flex;align-items:center;justify-content:center;gap:12px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rd);padding:18px;margin-bottom:22px}
+    .cbi{font-size:1.5rem;color:var(--am)}.cba{font-size:1.4rem;font-weight:900;color:#fff}.cbl{font-size:.8rem;color:var(--tx2);font-weight:700}
+    .ftg{display:grid;gap:10px}
+    @media(min-width:540px){.ftg{grid-template-columns:1fr 1fr}}
+    .ftc{padding:16px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rds);position:relative;overflow:hidden}
+    .ftc-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+    .ftc-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:1.1rem;background:rgba(96,165,250,.1);color:var(--bl)}
+    .ftc-name{font-weight:800;font-size:.88rem;color:#fff;display:flex;align-items:center;gap:6px}
+    .ftc-desc{font-size:.74rem;color:var(--mt);font-weight:600;margin-bottom:10px}
+    .ftc-btns{display:flex;gap:8px}
+    .ftc-buy{flex:1;border:1px solid var(--bd);border-radius:var(--pill);padding:10px 8px;font-size:.76rem;font-weight:800;color:var(--am);background:var(--bg3);cursor:pointer;font-family:inherit;text-align:center;transition:background 150ms,transform 80ms}
+    .ftc-buy:hover{background:rgba(245,166,35,.08)}.ftc-buy:active{transform:translateY(2px)}.ftc-buy:disabled{opacity:.3;cursor:default}
+    .ftc-coin-buy{width:100%;border:none;border-radius:var(--pill);padding:10px 8px;font-size:.78rem;font-weight:800;color:#0f1117;background:var(--am);cursor:pointer;font-family:inherit;text-align:center;transition:transform 80ms,filter 200ms;display:flex;align-items:center;justify-content:center;gap:5px}
+    .ftc-coin-buy:hover{filter:brightness(1.08)}
+    .ftc-coin-buy:active{transform:translateY(2px)}
+    .ftc-coin-buy:disabled{opacity:.3;cursor:default;filter:none}
+    .ftc-need{width:100%;border:1px solid rgba(245,166,35,.25);border-radius:var(--pill);padding:10px 8px;font-size:.74rem;font-weight:800;color:var(--am);background:transparent;cursor:pointer;font-family:inherit;text-align:center;transition:background 150ms}
+    .ftc-need:hover{background:rgba(245,166,35,.06)}
+    .cp-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:1.1rem;background:rgba(245,166,35,.1);color:var(--am)}
+    .cp-coins{font-size:1.1rem;font-weight:900;color:#fff}
+    .cp-bonus{font-size:.68rem;color:var(--ok);font-weight:800;margin-top:1px}
+    .pop-badge{position:absolute;top:8px;right:8px;font-size:.6rem;padding:3px 8px;border-radius:999px;font-weight:800;text-transform:uppercase;letter-spacing:.3px}
+    .pop-hot{background:var(--am);color:#0f1117}
+    .pop-val{background:var(--ok);color:#fff}
+
+    /* ── MILESTONES ── */
+    .mi{display:grid;grid-template-columns:46px 1fr auto;gap:11px;align-items:center;padding:14px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rds);margin-bottom:8px;transition:border-color 300ms}
+    .mi.ul{border-color:rgba(245,166,35,.2)}
+    .miw{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:1.2rem;background:var(--bg3);transition:all 300ms}
+    .mi.ul .miw{background:rgba(245,166,35,.12);color:var(--am)}
+    .mi.lk .miw{color:var(--mt)}
+    .min{font-weight:800;font-size:.88rem;color:#fff}
+    .mid{font-size:.73rem;color:var(--mt);margin-top:1px;font-weight:600}
+    .mpr{display:flex;align-items:center;gap:7px;margin-top:5px}
+    .mpb{flex:1;height:5px;border-radius:999px;background:var(--bg3);overflow:hidden}
+    .mpf{height:100%;border-radius:999px;background:var(--am);transition:width 500ms ease}
+    .mi.ul .mpf{background:var(--am)}
+    .mpt{font-size:.68rem;font-weight:800;color:var(--mt);min-width:40px;text-align:right}
+    .mi.ul .mpt{color:var(--am)}
+    .mub{font-size:.68rem;color:var(--ok);font-weight:800;margin-top:3px;display:flex;align-items:center;gap:3px}
+    .mrw{display:flex;align-items:center;gap:4px;font-size:.74rem;font-weight:800;color:var(--am);white-space:nowrap}
+    .mi.lk .mrw{color:var(--mt);opacity:.5}
+
+    /* ── GROUPS ── */
+    .inv-card{padding:16px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rds);margin-bottom:16px}
+    .inv-link{display:flex;gap:8px;margin:10px 0}
+    .inv-url{flex:1;background:var(--bg3);border:1px solid var(--bd);color:var(--tx2);padding:12px 14px;border-radius:var(--rds);font-size:.82rem;font-weight:700;font-family:inherit;outline:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .inv-copy,.inv-wa{border:none;border-radius:var(--pill);padding:12px 16px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit;transition:transform 80ms,filter 200ms}
+    .inv-copy{background:var(--bg3);color:var(--tx);border:1px solid var(--bd)}
+    .inv-wa{background:#25D366;color:#fff}
+    .inv-copy:active,.inv-wa:active{transform:translateY(2px)}
+    .fr-row{display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:10px;padding:13px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rds);margin-bottom:7px}
+    .fr-av{width:36px;height:36px;border-radius:50%;background:var(--bg3);display:grid;place-items:center;font-size:.85rem;color:var(--am);font-weight:900}
+    .fr-nm{font-weight:800;font-size:.88rem;color:#fff}
+    .fr-sk{font-size:.74rem;color:var(--tx2);font-weight:700}
+    .fr-st{font-weight:900;color:var(--am);font-size:.85rem}
+    .gc{padding:14px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rds);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .gc-info{flex:1}
+    .gc-name{font-weight:800;font-size:.9rem;color:#fff}
+    .gc-meta{font-size:.74rem;color:var(--tx2);margin-top:2px;font-weight:600}
+    .gc-view{border:1px solid var(--bd);border-radius:var(--pill);padding:9px 18px;font-size:.76rem;font-weight:800;color:var(--am);background:var(--bg3);cursor:pointer;font-family:inherit;transition:background 150ms}
+    .gc-view:hover{background:rgba(245,166,35,.06)}
+    .cg-btn{width:100%;border:none;border-radius:var(--pill);padding:15px;font-size:.92rem;font-weight:800;color:#0f1117;background:var(--am);cursor:pointer;font-family:inherit;margin-top:10px;text-transform:uppercase;letter-spacing:.8px;transition:transform 80ms,filter 200ms}
+    .cg-btn:hover{filter:brightness(1.08)}
+    .cg-btn:active{transform:translateY(2px)}
+
+    /* ── GROUP DETAIL ── */
+    .gd{animation:vi 300ms ease both}
+    .gd-top{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+    .gd-back{width:38px;height:38px;border-radius:50%;background:var(--bg3);border:1px solid var(--bd);color:var(--tx2);display:grid;place-items:center;cursor:pointer;font-size:.9rem;transition:background 150ms;flex-shrink:0}
+    .gd-back:hover{background:rgba(255,255,255,.06)}
+    .gd-top-info{flex:1;min-width:0}
+    .gd-name{font-size:1.1rem;font-weight:900;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .gd-count{font-size:.74rem;color:var(--tx2);font-weight:700;margin-top:2px}
+    .gd-invite{border:1px solid rgba(245,166,35,.25);border-radius:var(--pill);padding:9px 16px;font-size:.74rem;font-weight:800;color:var(--am);background:transparent;cursor:pointer;font-family:inherit;transition:background 150ms,transform 80ms;white-space:nowrap;flex-shrink:0}
+    .gd-invite:hover{background:rgba(245,166,35,.06)}
+    .gd-invite:active{transform:translateY(1px)}
+    .gd-row{display:grid;grid-template-columns:30px 40px 1fr auto auto;align-items:center;gap:10px;padding:12px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rds);margin-bottom:6px;cursor:pointer;transition:background 200ms,border-color 200ms,box-shadow 200ms}
+    .gd-row:hover{background:rgba(255,255,255,.03)}
+    .gd-row.me{border-color:rgba(245,166,35,.25);background:rgba(245,166,35,.04);box-shadow:inset 0 0 0 1px rgba(245,166,35,.08)}
+    .gd-row.top1{border-color:rgba(255,215,0,.18);background:linear-gradient(135deg,rgba(255,215,0,.05),transparent 70%)}
+    .gd-row.top2{border-color:rgba(192,192,192,.14);background:linear-gradient(135deg,rgba(192,192,192,.04),transparent 70%)}
+    .gd-row.top3{border-color:rgba(205,127,50,.14);background:linear-gradient(135deg,rgba(205,127,50,.04),transparent 70%)}
+    .gd-rank{font-weight:900;color:var(--tx2);text-align:center;font-size:.85rem}
+    .gd-av{width:40px;height:40px;border-radius:50%;overflow:hidden;background:#0f1117;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .gd-av img{width:100%;height:100%;object-fit:contain;display:block}
+    .gd-av.glow-hi{box-shadow:0 0 10px rgba(255,153,0,.35)}
+    .gd-av.glow-md{box-shadow:0 0 6px rgba(224,122,26,.2)}
+    .gd-info{min-width:0}
+    .gd-mn{font-weight:800;font-size:.88rem;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .gd-mt{font-size:.66rem;color:var(--am);font-weight:700;margin-left:4px;opacity:.8}
+    .gd-sb{display:flex;align-items:center;gap:4px;font-weight:900;font-size:.85rem;color:var(--am);white-space:nowrap}
+    .gd-st{font-size:.68rem;font-weight:800;padding:4px 10px;border-radius:var(--pill);white-space:nowrap}
+    .gd-st.done{background:rgba(34,197,94,.1);color:var(--ok)}
+    .gd-st.pend{background:rgba(107,114,128,.1);color:var(--tx2)}
+    .gm-pop{position:fixed;inset:0;background:rgba(8,9,14,.92);display:grid;place-items:center;z-index:38;opacity:0;pointer-events:none;transition:opacity 240ms;padding:24px}
+    .gm-pop.show{opacity:1;pointer-events:auto}
+    .gm-card{width:100%;max-width:380px;border-radius:20px;background:var(--bg2);border:1px solid var(--bd);padding:24px 20px;position:relative;transform:translateY(16px) scale(.97);transition:transform 280ms cubic-bezier(.2,.9,.3,1);max-height:90vh;overflow-y:auto}
+    .gm-pop.show .gm-card{transform:translateY(0) scale(1)}
+    .gm-hdr{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+    .gm-av{width:56px;height:56px;border-radius:50%;overflow:hidden;background:#0f1117;flex-shrink:0}
+    .gm-av img{width:100%;height:100%;object-fit:contain;display:block}
+    .gm-nm{font-size:1.05rem;font-weight:900;color:#fff}
+    .gm-sk{font-size:.85rem;font-weight:800;color:var(--am);margin-top:3px;display:flex;align-items:center;gap:5px}
+    .gm-sec{font-size:.72rem;font-weight:800;color:var(--tx2);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+    .gm-sec i{color:var(--am);font-size:.8rem}
+    .gm-hm{position:relative;width:120px;height:120px;margin:0 auto 14px;border-radius:50%;overflow:hidden;background:#0f1117}
+    .gm-hm img{width:100%;height:100%;object-fit:contain;display:block;position:relative;z-index:1}
+    .gm-hm .hm-svg{z-index:2}
+    .gm-legend{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;justify-content:center}
+
+    /* ── GROUP EMPTY STATE ── */
+    .gd-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px;min-height:260px}
+    .gd-empty-icon{font-size:2.8rem;color:var(--am);margin-bottom:16px;opacity:.7}
+    .gd-empty-title{font-size:1rem;font-weight:900;color:#fff;margin-bottom:6px}
+    .gd-empty-sub{font-size:.84rem;font-weight:700;color:var(--tx2);max-width:280px;line-height:1.5;margin-bottom:24px}
+    .gd-empty-cta{border:none;border-radius:var(--pill);padding:14px 28px;font-size:.92rem;font-weight:800;color:#0f1117;background:var(--am);cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:.8px;transition:transform 80ms,filter 200ms;margin-bottom:18px}
+    .gd-empty-cta:hover{filter:brightness(1.08)}
+    .gd-empty-cta:active{transform:translateY(2px)}
+    .gd-add-row{display:flex;gap:8px;width:100%;max-width:320px}
+    .gd-add-input{flex:1;background:var(--bg3);border:1px solid var(--bd);color:#fff;padding:12px 14px;border-radius:var(--rds);font-size:.84rem;font-weight:700;font-family:inherit;outline:none;transition:border-color 150ms}
+    .gd-add-input:focus{border-color:rgba(245,166,35,.3)}
+    .gd-add-input::placeholder{color:rgba(107,114,128,.6);font-weight:600}
+    .gd-add-btn{border:none;border-radius:var(--rds);padding:12px 18px;font-size:.8rem;font-weight:800;color:#0f1117;background:var(--am);cursor:pointer;font-family:inherit;white-space:nowrap;transition:transform 80ms,filter 200ms}
+    .gd-add-btn:hover{filter:brightness(1.08)}
+    .gd-add-btn:active{transform:translateY(1px)}
+    .gd-add-section{width:100%;max-width:320px;margin-top:8px}
+    .gd-add-label{font-size:.68rem;font-weight:800;color:var(--tx2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;text-align:left}
+
+    /* ── PROFILE ── */
+    .profile-header{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+    .profile-avatar{width:64px;height:64px;border-radius:50%;background:rgba(245,166,35,.12);border:2px solid rgba(245,166,35,.3);display:grid;place-items:center;font-size:1.8rem;color:var(--am);font-weight:900}
+    .profile-name{font-size:1.2rem;font-weight:900;color:#fff}
+    .profile-joined{font-size:.78rem;color:var(--tx2);font-weight:700}
+    .profile-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
+    .profile-stat{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rds);padding:16px 12px;text-align:center}
+    .profile-stat-val{font-size:1.3rem;font-weight:900;color:#fff}
+    .profile-stat-label{font-size:.68rem;font-weight:800;color:var(--mt);text-transform:uppercase;letter-spacing:1.5px;margin-top:4px}
+    .profile-section{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rd);padding:16px;margin-bottom:12px}
+    .profile-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--bd)}
+    .profile-row:last-child{border-bottom:none}
+    .profile-row-label{font-weight:700;font-size:.88rem;color:var(--tx2)}
+    .profile-row-val{font-weight:800;font-size:.88rem;color:#fff}
+    .profile-reset{width:100%;border:1px solid rgba(239,68,68,.25);border-radius:var(--pill);padding:14px;font-size:.9rem;font-weight:800;color:#ef4444;background:transparent;cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:.8px;transition:background 150ms}
+    .profile-reset:hover{background:rgba(239,68,68,.06)}
+
+    /* ── TRAINING PLAN SECTION ── */
+    .tp-section{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rd);padding:18px 16px;margin-bottom:12px}
+    .tp-title{font-size:.72rem;font-weight:800;color:var(--tx2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+    .tp-title i{color:var(--am);font-size:.85rem}
+    .tp-current{font-size:.82rem;font-weight:700;color:var(--am);margin-bottom:14px}
+    .tp-seg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+    .tp-opt{border:1px solid var(--bd);border-radius:var(--rds);padding:10px 4px;text-align:center;cursor:pointer;transition:border-color 200ms,background 200ms,box-shadow 200ms;background:var(--bg3);font-family:inherit}
+    .tp-opt:hover{border-color:rgba(255,255,255,.12)}
+    .tp-opt.active{border-color:var(--am);background:rgba(245,166,35,.08);box-shadow:0 0 0 1px rgba(245,166,35,.15) inset}
+    .tp-opt-val{font-size:1.05rem;font-weight:900;color:#fff;line-height:1}
+    .tp-opt-label{font-size:.62rem;font-weight:700;color:var(--tx2);margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
+    .tp-opt.active .tp-opt-val{color:var(--am)}
+    .tp-opt.active .tp-opt-label{color:var(--am)}
+
+    /* ── SACRIFICE MODAL ── */
+    .sac-bg{position:fixed;inset:0;background:rgba(8,9,14,.94);display:grid;place-items:center;z-index:40;opacity:0;pointer-events:none;transition:opacity 240ms;padding:24px}
+    .sac-bg.show{opacity:1;pointer-events:auto}
+    .sac-card{width:100%;max-width:380px;border-radius:20px;background:var(--bg2);border:1px solid rgba(239,68,68,.25);box-shadow:0 0 40px rgba(239,68,68,.08),0 0 80px rgba(239,68,68,.04);padding:28px 22px;text-align:center;transform:translateY(16px) scale(.97);transition:transform 280ms cubic-bezier(.2,.9,.3,1)}
+    .sac-bg.show .sac-card{transform:translateY(0) scale(1)}
+    .sac-icon{font-size:3rem;margin-bottom:14px;position:relative;display:inline-block}
+    .sac-icon .flame-die{color:#ef4444;animation:flameDie 2s ease infinite alternate}
+    @keyframes flameDie{0%{opacity:1;filter:grayscale(0) brightness(1)}50%{opacity:.6;filter:grayscale(.5) brightness(.7)}100%{opacity:.3;filter:grayscale(1) brightness(.4)}}
+    .sac-title{font-size:1.1rem;font-weight:900;color:#fff;margin-bottom:8px}
+    .sac-text{font-size:.88rem;font-weight:700;color:var(--tx2);line-height:1.55;margin-bottom:6px}
+    .sac-streak{font-size:1.6rem;font-weight:900;color:#ef4444;margin:6px 0 18px}
+    .sac-confirm{width:100%;border:none;border-radius:var(--pill);padding:15px;font-size:.92rem;font-weight:800;color:#fff;background:#dc2626;cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:.8px;transition:transform 80ms,filter 200ms,background 150ms;margin-bottom:10px}
+    .sac-confirm:hover{background:#ef4444;filter:brightness(1.1)}
+    .sac-confirm:active{transform:translateY(2px)}
+    .sac-cancel{width:100%;border:1px solid var(--bd);border-radius:var(--pill);padding:14px;font-size:.88rem;font-weight:800;color:var(--tx2);background:transparent;cursor:pointer;font-family:inherit;transition:background 150ms}
+    .sac-cancel:hover{background:rgba(255,255,255,.04)}
+
+    /* ── MASCOT PUFF ── */
+    .mascot-puff{animation:puffOut 800ms ease forwards !important}
+    @keyframes puffOut{0%{transform:scale(1);opacity:1;filter:grayscale(0)}40%{transform:scale(1.15);opacity:.7;filter:grayscale(.3) brightness(1.3)}70%{transform:scale(.6);opacity:.3;filter:grayscale(.8) brightness(.5)}100%{transform:scale(.8);opacity:1;filter:grayscale(0)}}
+
+    /* ── MODAL ── */
+    .modal-bg{position:fixed;inset:0;background:rgba(8,9,14,.92);display:grid;place-items:center;z-index:35;opacity:0;pointer-events:none;transition:opacity 240ms;padding:24px}
+    .modal-bg.show{opacity:1;pointer-events:auto}
+    .modal-card{width:100%;max-width:400px;border-radius:20px;background:var(--bg2);border:1px solid var(--bd);padding:24px 20px}
+    .modal-title{font-size:1.1rem;font-weight:900;margin-bottom:14px;color:#fff}
+    .modal-close{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--tx2);font-size:1.2rem;cursor:pointer}
+
+    /* ── WORKOUT MODAL ── */
+    .wk-modal-bg{position:fixed;inset:0;background:rgba(8,9,14,.92);display:grid;place-items:center;z-index:36;opacity:0;pointer-events:none;transition:opacity 240ms;padding:24px}
+    .wk-modal-bg.show{opacity:1;pointer-events:auto}
+    .wk-card{width:100%;max-width:380px;border-radius:20px;background:var(--bg2);border:1px solid var(--bd);padding:28px 22px;position:relative;transform:translateY(16px) scale(.97);transition:transform 280ms cubic-bezier(.2,.9,.3,1)}
+    .wk-modal-bg.show .wk-card{transform:translateY(0) scale(1)}
+    .wk-close{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--tx2);font-size:1.2rem;cursor:pointer;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;transition:background 150ms}
+    .wk-close:hover{background:rgba(255,255,255,.06)}
+    .wk-title{font-size:1.15rem;font-weight:900;color:#fff;margin-bottom:4px}
+    .wk-sub{font-size:.82rem;font-weight:700;color:var(--tx2);margin-bottom:20px}
+    .wk-label{font-size:.72rem;font-weight:800;color:var(--tx2);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px}
+    .wk-select{width:100%;appearance:none;-webkit-appearance:none;background:rgba(34,38,58,.7);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(245,166,35,.18);color:#fff;padding:15px 44px 15px 16px;border-radius:var(--rds);font-size:.95rem;font-weight:700;font-family:inherit;cursor:pointer;outline:none;transition:border-color 150ms,box-shadow 150ms;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
+    .wk-select:focus{border-color:var(--am);box-shadow:0 0 0 3px rgba(245,166,35,.12)}
+    .wk-select option{background:var(--bg2);color:#fff;padding:10px}
+    .wk-select optgroup{background:var(--bg);color:var(--am);font-weight:800;font-style:normal;font-size:.85rem}
+    .wk-dur{width:100%;background:rgba(34,38,58,.7);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(245,166,35,.18);color:#fff;padding:15px 16px;border-radius:var(--rds);font-size:.95rem;font-weight:700;font-family:inherit;outline:none;transition:border-color 150ms,box-shadow 150ms;margin-top:14px}
+    .wk-dur:focus{border-color:var(--am);box-shadow:0 0 0 3px rgba(245,166,35,.12)}
+    .wk-dur::placeholder{color:rgba(107,114,128,.7);font-weight:600}
+    .wk-save{width:100%;border:none;border-radius:var(--pill);padding:16px;font-size:1rem;font-weight:800;color:#0f1117;background:var(--am);cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:.8px;transition:transform 80ms,filter 200ms;margin-top:18px}
+    .wk-save:hover{filter:brightness(1.08)}
+    .wk-save:active{transform:translateY(2px)}
+    .wk-icon-row{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+    .wk-icon-circle{width:46px;height:46px;border-radius:50%;background:rgba(245,166,35,.1);display:grid;place-items:center;font-size:1.2rem;color:var(--am)}
+
+    /* ── RESET / TOAST ── */
+    .rpop{position:fixed;inset:0;background:rgba(8,9,14,.92);display:grid;place-items:center;z-index:30;opacity:0;pointer-events:none;transition:opacity 240ms;padding:24px;text-align:center}
+    .rpop.show{opacity:1;pointer-events:auto}
+    .rcard{width:100%;max-width:380px;border-radius:20px;background:var(--bg2);border:1px solid var(--bd);padding:26px 20px;animation:shk 420ms ease}
+    @keyframes shk{0%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}100%{transform:translateX(0)}}
+    .ricon{font-size:2rem;color:#ef4444;margin-bottom:8px}
+    .rtitle{font-size:1.15rem;font-weight:900;margin-bottom:5px;color:#fff}
+    .rtxt{font-weight:700;font-size:.9rem;color:var(--tx2)}
+    .rsub{color:var(--mt);font-size:.82rem;margin-top:7px;font-weight:600}
+    .rdis{margin-top:16px;border:none;border-radius:var(--pill);padding:14px 36px;font-size:.9rem;font-weight:800;color:#0f1117;background:var(--am);cursor:pointer;font-family:inherit;text-transform:uppercase;letter-spacing:.5px;transition:transform 80ms,filter 200ms}
+    .rdis:hover{filter:brightness(1.08)}
+    .rdis:active{transform:translateY(2px)}
+    .toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(-100px);padding:12px 20px;border-radius:var(--pill);font-weight:800;font-size:.85rem;z-index:40;display:flex;align-items:center;gap:7px;backdrop-filter:blur(12px);animation:ts 2.6s ease forwards;pointer-events:none;border:1px solid var(--bd)}
+    .t-fr{background:rgba(96,165,250,.12);color:var(--bls)}
+    .t-co{background:rgba(245,166,35,.12);color:var(--am)}
+    .t-ok{background:rgba(34,197,94,.12);color:var(--oks)}
+    @keyframes ts{0%{transform:translateX(-50%) translateY(-100px);opacity:0}12%{transform:translateX(-50%) translateY(0);opacity:1}75%{transform:translateX(-50%) translateY(0);opacity:1}100%{transform:translateX(-50%) translateY(-100px);opacity:0}}
+    .vfi{animation:vi 400ms ease both}
+    @keyframes vi{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    .pt{font-size:1.25rem;font-weight:900;margin-bottom:3px;color:#fff}
+    .ps{color:var(--tx2);font-size:.84rem;margin-bottom:18px;font-weight:700}
+  </style>
+</head>
+<body>
+<main class="app">
+
+<div id="supaWarn" class="gsi-warn" style="display:none;background:#1e3a5f;border-color:#3b82f6;top:42px">⚠️ Supabase nicht konfiguriert – App läuft im Offline-Modus (localStorage)</div>
+<div id="emailConfirmScreen" class="hidden" style="position:fixed;inset:0;background:var(--bg);z-index:50;display:grid;place-items:center;padding:24px;text-align:center">
+  <div style="max-width:380px">
+    <div style="font-size:3rem;margin-bottom:16px"><i class="fa-solid fa-envelope-circle-check" style="color:var(--am)"></i></div>
+    <div style="font-size:1.2rem;font-weight:900;color:#fff;margin-bottom:8px">E-Mail bestätigen</div>
+    <div style="font-size:.88rem;font-weight:700;color:var(--tx2);line-height:1.6;margin-bottom:24px">Wir haben dir eine Bestätigungs-E-Mail gesendet. Klicke auf den Link in der E-Mail, um dein Konto zu aktivieren.</div>
+    <button id="emailConfirmBack" style="border:none;border-radius:var(--pill);padding:14px 28px;font-size:.9rem;font-weight:800;color:#0f1117;background:var(--am);cursor:pointer;font-family:inherit">Zurück zum Login</button>
+  </div>
+</div>
+  <!-- ══ ONBOARDING (Multi-step) ══ -->
+  <section id="obView" class="onboarding hidden">
+    <div class="ob-progress"><div id="obProgressFill" class="ob-progress-fill" style="width:20%"></div></div>
+    <div class="ob-viewport">
+
+      <!-- Step 1: Welcome -->
+      <div id="obS1" class="ob-step active">
+        <div class="ob-step-inner">
+          <div class="ob-logo"><i class="fa-solid fa-fire-flame-curved"></i> GymStreak</div>
+          <div class="ob-headline">Baue deine stärkste Gewohnheit.</div>
+          <div class="ob-subline">Dein persönlicher Gym-Streak Tracker.</div>
+          <button id="obEmailBtn" class="ob-btn-email">Mit E-Mail registrieren</button>
+          <div class="ob-bottom-link">Bereits ein Konto? <span id="obLoginLink">Anmelden</span></div>
+        </div>
+      </div>
+
+      <!-- Step 2: Email Registration -->
+      <div id="obS2" class="ob-step">
+        <button id="obBack2" class="ob-back"><i class="fa-solid fa-arrow-left"></i></button>
+        <div class="ob-step-inner" style="gap:14px">
+          <div id="authShell" class="auth-shell auth-register">
+            <div id="authBadge" class="auth-badge"><i class="fa-solid fa-user-plus"></i> Registrierung</div>
+            <div id="authTitle" class="ob-form-title">Konto erstellen</div>
+            <div id="authSub" class="ob-form-sub">Starte deine erste Streak in wenigen Sekunden.</div>
+            <div id="nameField" class="fg hidden-field"><span class="fl">Dein Name</span><input id="inName" class="fi" type="text" maxlength="24" placeholder="Alex"/></div>
+            <div class="fg"><span class="fl">E-Mail</span><input id="inEmail" class="fi" type="email" placeholder="you@example.com"/><div id="inEmailErr" class="fi-msg"></div></div>
+            <div class="fg"><span class="fl">Passwort</span><div class="pw-wrap"><input id="inPass" class="fi" type="password" placeholder="Passwort erstellen"/><button type="button" id="pwToggle" class="pw-toggle"><i class="fa-solid fa-eye"></i></button></div></div>
+            <div id="pwConfirmField" class="fg"><span class="fl">Passwort wiederholen</span><div class="pw-wrap"><input id="inPassConfirm" class="fi" type="password" placeholder="Passwort wiederholen"/><button type="button" id="pwConfirmToggle" class="pw-toggle"><i class="fa-solid fa-eye"></i></button></div><div id="inPassConfirmErr" class="fi-msg"></div></div>
+            <button id="obNext2" class="ob-btn-next register-mode" aria-disabled="true">REGISTRIEREN</button>
+            <div class="auth-switch"><span id="authSwitchText">Bereits ein Konto?</span> <a id="authSwitchLink">Jetzt einloggen</a></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Character Select -->
+      <div id="obS3" class="ob-step">
+        <button id="obBack3" class="ob-back"><i class="fa-solid fa-arrow-left"></i></button>
+        <div class="ob-step-inner">
+          <div class="ob-form-title">Wähle deinen Begleiter</div>
+          <div class="ob-form-sub">Er begleitet dich auf deiner Streak-Reise.</div>
+          <div class="char-grid">
+            <div class="char-card" data-char="male">
+              <div class="char-card-check"><i class="fa-solid fa-check"></i></div>
+              <div class="character-circle"><img src="flame-male.png" alt="Blaze"/></div>
+              <div class="char-card-name">Blaze</div>
+            </div>
+            <div class="char-card" data-char="female">
+              <div class="char-card-check"><i class="fa-solid fa-check"></i></div>
+              <div class="character-circle"><img src="flame-female.png" alt="Ember"/></div>
+              <div class="char-card-name">Ember</div>
+            </div>
+          </div>
+          <button id="obNext3" class="ob-btn-next" disabled>WEITER</button>
+        </div>
+      </div>
+
+      <!-- Step 4: Rhythm Select -->
+      <div id="obS4" class="ob-step">
+        <button id="obBack4" class="ob-back"><i class="fa-solid fa-arrow-left"></i></button>
+        <div class="ob-step-inner">
+          <div class="ob-form-title">Wie oft trainierst du?</div>
+          <div class="ob-form-sub">Wir erinnern dich zur richtigen Zeit.</div>
+          <div class="rhythm-list">
+            <div class="rhythm-card sel" data-rv="1"><div class="rhythm-card-title">Täglich 🔥</div><div class="rhythm-card-desc">Für absolute Konsistenz</div></div>
+            <div class="rhythm-card" data-rv="2"><div class="rhythm-card-title">Alle 2 Tage 💪</div><div class="rhythm-card-desc">Trainieren, regenerieren, wiederholen</div></div>
+            <div class="rhythm-card" data-rv="3"><div class="rhythm-card-title">Alle 3 Tage ⚡</div><div class="rhythm-card-desc">Solide Balance aus Training & Erholung</div></div>
+            <div class="rhythm-card" data-rv="7"><div class="rhythm-card-title">Wöchentlich 🏆</div><div class="rhythm-card-desc">Ein starker Tag pro Woche</div></div>
+          </div>
+          <button id="obNext4" class="ob-btn-next">LOS GEHT'S</button>
+        </div>
+      </div>
+
+      <!-- Step 5: Ready -->
+      <div id="obS5" class="ob-step">
+        <div class="ob-step-inner">
+          <div class="ready-mascot-wrap">
+            <div class="ready-glow"></div>
+            <div class="character-circle ready-mascot-circle"><img id="readyMascotImg" src="flame-male.png" alt="Your Character"/></div>
+          </div>
+          <div class="ready-charname" id="readyCharName">Blaze</div>
+          <div class="ready-headline" id="readyHeadline">Let's go! 🔥</div>
+          <div class="ready-sub">Dein erstes Training wartet.</div>
+          <button id="obStart" class="ob-btn-next" style="width:100%">STREAK STARTEN</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══ STICKY TOP BAR ══ -->
+  <header id="topBar" class="topbar hidden">
+    <div class="topbar-brand"><i class="fa-solid fa-fire-flame-curved"></i> GymStreak</div>
+    <div class="topbar-stats">
+      <div class="stat-pill sp-streak"><i class="fa-solid fa-fire"></i> <span id="tbStreak">0</span></div>
+      <div class="stat-pill sp-coins"><i class="fa-solid fa-coins"></i> <span id="tbCoins">0</span></div>
+      <div class="stat-pill sp-freeze"><i class="fa-regular fa-snowflake"></i> <span id="tbFreeze">0</span></div>
+      <img id="tbAvatar" class="topbar-avatar hidden" src="" alt=""/>
+    </div>
+  </header>
+
+  <!-- ══ HOME ══ -->
+  <section id="homeView" class="mw hidden"><div class="cc">
+    <div id="lvlBanner" class="lvl-banner">
+      <div>
+        <div class="lvl-text" id="lvlText">STREAK LEVEL 1</div>
+        <div class="lvl-sub" id="lvlSub">Keep pushing!</div>
+      </div>
+      <div class="lvl-badge"><i class="fa-solid fa-fire-flame-curved"></i></div>
+    </div>
+    <div class="dcard">
+      <div class="mwrap">
+        <div class="mascot-glow"></div>
+        <div id="mascotCircle" class="character-circle mascot-circle">
+          <img id="mascotImg" src="flame-male.png" alt="Flame Mascot"/>
+          <svg class="hm-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <filter id="hmSoft"><feGaussianBlur stdDeviation="2.5"/></filter>
+              <filter id="hmGlow"><feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <filter id="hmAura"><feGaussianBlur stdDeviation="6"/></filter>
+            </defs>
+            <ellipse id="hmHead"  class="hm-region hm-passive" cx="50" cy="18" rx="18" ry="15" filter="url(#hmSoft)"/>
+            <ellipse id="hmBack"  class="hm-region" cx="50" cy="40" rx="28" ry="22" filter="url(#hmAura)"/>
+            <ellipse id="hmUpper" class="hm-region" cx="50" cy="37" rx="17" ry="9"  filter="url(#hmSoft)"/>
+            <ellipse id="hmCore"  class="hm-region" cx="50" cy="52" rx="13" ry="8"  filter="url(#hmSoft)"/>
+            <ellipse id="hmLArm"  class="hm-region" cx="25" cy="42" rx="7"  ry="14" filter="url(#hmSoft)"/>
+            <ellipse id="hmRArm"  class="hm-region" cx="75" cy="42" rx="7"  ry="14" filter="url(#hmSoft)"/>
+            <ellipse id="hmLLeg"  class="hm-region" cx="39" cy="76" rx="9"  ry="14" filter="url(#hmSoft)"/>
+            <ellipse id="hmRLeg"  class="hm-region" cx="61" cy="76" rx="9"  ry="14" filter="url(#hmSoft)"/>
+          </svg>
+        </div>
+      </div>
+      <p class="sn" id="streakN">0</p>
+      <p class="sl">Day Streak</p>
+      <div class="tmr" id="tmrTx">Next session in --</div>
+      <button id="ckBtn" class="cbtn"><i class="fa-solid fa-dumbbell"></i>  LOG WORKOUT</button>
+      <div class="ms"><div class="msh"><span>Milestone progress</span><span id="msTx">0 / 10</span></div><div class="pbg"><div id="pFill" class="pfl"></div></div></div>
+    </div>
+
+    <!-- HEATMAP PANEL -->
+    <div class="hm-panel" id="hmPanel">
+      <div class="hm-panel-title"><i class="fa-solid fa-fire-flame-curved"></i> MUSKELGRUPPEN HEATMAP</div>
+      <div class="hm-legend">
+        <div class="hm-leg-item"><span class="hm-dot hot"></span> Aktiv (8+)</div>
+        <div class="hm-leg-item"><span class="hm-dot med"></span> Moderat (4–7)</div>
+        <div class="hm-leg-item"><span class="hm-dot cold"></span> Pause (&lt;3)</div>
+      </div>
+      <div id="hmBars"></div>
+    </div>
+
+    <!-- MISSIONS -->
+    <div class="mission-section">
+      <div class="sec-title">TAGESMISSION</div>
+      <div id="dailyMission" class="mission-card">
+        <div class="mission-icon active"><i class="fa-solid fa-dumbbell"></i></div>
+        <div class="mission-body">
+          <div class="mission-name">Logge dein Workout</div>
+          <div class="mission-desc">Checke heute ein um die Belohnung zu erhalten</div>
+          <div class="mission-bar"><div id="missionFill" class="mission-bar-fill" style="width:0%"></div></div>
+          <div class="mission-countdown" id="missionCountdown"></div>
+        </div>
+        <div class="mission-reward active"><i class="fa-solid fa-gift"></i></div>
+      </div>
+      <div class="sec-title" style="margin-top:14px">DEMNÄCHST</div>
+      <div class="mission-card" style="opacity:.5">
+        <div class="mission-icon locked"><i class="fa-solid fa-lock"></i></div>
+        <div class="mission-body">
+          <div class="mission-name locked">3 Workouts diese Woche</div>
+          <div class="mission-desc">Trainiere 3 Mal in einer Woche</div>
+        </div>
+        <div class="mission-reward locked"><i class="fa-solid fa-lock"></i></div>
+      </div>
+      <div class="mission-card" style="opacity:.5">
+        <div class="mission-icon locked"><i class="fa-solid fa-lock"></i></div>
+        <div class="mission-body">
+          <div class="mission-name locked">7-Tage Streak halten</div>
+          <div class="mission-desc">Halte einen 7-Tage Streak aufrecht</div>
+        </div>
+        <div class="mission-reward locked"><i class="fa-solid fa-lock"></i></div>
+      </div>
+    </div>
+  </div></section>
+
+  <!-- ══ LEADERBOARD ══ -->
+  <section id="lbView" class="mw hidden"><div class="cc">
+    <div class="pt">Leaderboard</div>
+    <div class="ps">Local rankings sorted by streak length.</div>
+    <div id="lbList" class="lb"></div>
+  </div></section>
+
+  <!-- ══ SHOP ══ -->
+  <section id="shView" class="mw hidden"><div class="cc">
+    <div class="pt">Shop</div>
+    <div class="ps">Coins verdienen & Streak-Power kaufen.</div>
+    <div class="cbn"><i class="fa-solid fa-coins cbi"></i><div><div class="cba" id="shCoins">0</div><div class="cbl">Coins verfügbar</div></div></div>
+    <div class="ss">
+      <div class="sec-title"><i class="fa-regular fa-snowflake"></i>  STREAK FREEZERS</div>
+      <div class="ftg" id="frzGrid"></div>
+    </div>
+    <div class="ss" id="coinPackSection">
+      <div class="sec-title"><i class="fa-solid fa-coins"></i>  COINS AUFLADEN</div>
+      <div class="ftg" id="coinGrid"></div>
+    </div>
+    <div class="ss">
+      <div class="sec-title"><i class="fa-solid fa-award"></i>  MILESTONES</div>
+      <div id="msList"></div>
+    </div>
+  </div></section>
+
+  <!-- ══ GROUPS ══ -->
+  <section id="grView" class="mw hidden"><div class="cc">
+    <div id="grMain">
+      <div class="pt">Friends &amp; Groups</div>
+      <div class="ps">Train together, stay accountable.</div>
+      <div class="ss">
+        <div class="sec-title"><i class="fa-solid fa-paper-plane"></i>  INVITE FRIENDS</div>
+        <div class="inv-card">
+          <div style="font-size:.82rem;color:var(--tx2);font-weight:700;margin-bottom:4px">Your referral link</div>
+          <div class="inv-link">
+            <input id="refUrl" class="inv-url" readonly/>
+            <button id="copyBtn" class="inv-copy"><i class="fa-regular fa-copy"></i></button>
+            <button id="waBtn" class="inv-wa"><i class="fa-brands fa-whatsapp"></i></button>
+          </div>
+        </div>
+        <div class="sec-title" style="margin-top:16px"><i class="fa-solid fa-user-group"></i>  FRIENDS</div>
+        <div id="frList"></div>
+      </div>
+      <div class="ss" style="margin-top:8px">
+        <div class="sec-title"><i class="fa-solid fa-users"></i>  MY GROUPS</div>
+        <div id="grList"></div>
+        <div id="joinGroupSection" class="gd-add-section" style="margin-top:14px;max-width:100%">
+          <div class="gd-add-label">Gruppe beitreten (Einladungscode)</div>
+          <div class="gd-add-row">
+            <input id="joinCodeInput" class="gd-add-input" placeholder="Einladungscode eingeben" maxlength="20"/>
+            <button id="joinCodeBtn" class="gd-add-btn"><i class="fa-solid fa-right-to-bracket"></i> Beitreten</button>
+          </div>
+        </div>
+        <button id="cgBtn" class="cg-btn"><i class="fa-solid fa-plus"></i>  CREATE GROUP</button>
+      </div>
+    </div>
+    <div id="gdView" class="gd hidden">
+      <div class="gd-top">
+        <button id="gdBack" class="gd-back"><i class="fa-solid fa-arrow-left"></i></button>
+        <div class="gd-top-info">
+          <div class="gd-name" id="gdName">Group</div>
+          <div class="gd-count" id="gdCount">0 Mitglieder</div>
+        </div>
+        <button id="gdInvite" class="gd-invite"><i class="fa-solid fa-user-plus"></i> Einladen</button>
+      </div>
+      <div id="gdRankSection">
+        <div class="sec-title"><i class="fa-solid fa-ranking-star"></i>  RANKING</div>
+        <div id="gdList"></div>
+        <div class="gd-add-section" id="gdAddSection" style="margin-top:14px">
+          <div class="gd-add-label">Mitglied hinzufügen (Simulation)</div>
+          <div class="gd-add-row">
+            <input id="gdAddInput" class="gd-add-input" placeholder="Benutzername eingeben" maxlength="20"/>
+            <button id="gdAddBtn" class="gd-add-btn"><i class="fa-solid fa-plus"></i> Hinzufügen</button>
+          </div>
+        </div>
+      </div>
+      <div id="gdEmpty" class="gd-empty hidden">
+        <div class="gd-empty-icon"><i class="fa-solid fa-users-slash"></i></div>
+        <div class="gd-empty-title">Noch keine Mitstreiter hier!</div>
+        <div class="gd-empty-sub">Gemeinsam bleibt man eher am Ball. Lade Freunde ein oder füge Mitglieder hinzu.</div>
+        <button id="gdEmptyCta" class="gd-empty-cta"><i class="fa-solid fa-paper-plane"></i>  FREUNDE EINLADEN</button>
+        <div class="gd-add-section">
+          <div class="gd-add-label">Mitglied hinzufügen (Simulation)</div>
+          <div class="gd-add-row">
+            <input id="gdEmptyAddInput" class="gd-add-input" placeholder="Benutzername eingeben" maxlength="20"/>
+            <button id="gdEmptyAddBtn" class="gd-add-btn"><i class="fa-solid fa-plus"></i> Hinzufügen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></section>
+
+  <!-- ══ PROFILE ══ -->
+  <section id="prView" class="mw hidden"><div class="cc">
+    <div class="profile-header">
+      <div class="profile-avatar" id="prAvatar">A</div>
+      <div>
+        <div class="profile-name" id="prName">User</div>
+        <div class="profile-joined">GymStreak Member</div>
+      </div>
+    </div>
+    <div class="profile-stats">
+      <div class="profile-stat"><div class="profile-stat-val" id="prStreak">0</div><div class="profile-stat-label">Streak</div></div>
+      <div class="profile-stat"><div class="profile-stat-val" id="prWorkouts">0</div><div class="profile-stat-label">Workouts</div></div>
+      <div class="profile-stat"><div class="profile-stat-val" id="prCoins">0</div><div class="profile-stat-label">Coins</div></div>
+    </div>
+    <div class="tp-section">
+      <div class="tp-title"><i class="fa-solid fa-calendar-check"></i> DEIN TRAININGSPLAN</div>
+      <div class="tp-current" id="tpCurrent">Aktuell: Täglich</div>
+      <div class="tp-seg" id="tpSeg">
+        <div class="tp-opt" data-dpw="1"><div class="tp-opt-val">1</div><div class="tp-opt-label">Tag/W</div></div>
+        <div class="tp-opt" data-dpw="2"><div class="tp-opt-val">2</div><div class="tp-opt-label">Tage/W</div></div>
+        <div class="tp-opt" data-dpw="3"><div class="tp-opt-val">3</div><div class="tp-opt-label">Tage/W</div></div>
+        <div class="tp-opt" data-dpw="4"><div class="tp-opt-val">4</div><div class="tp-opt-label">Tage/W</div></div>
+        <div class="tp-opt" data-dpw="5"><div class="tp-opt-val">5</div><div class="tp-opt-label">Tage/W</div></div>
+        <div class="tp-opt" data-dpw="6"><div class="tp-opt-val">6</div><div class="tp-opt-label">Tage/W</div></div>
+        <div class="tp-opt" data-dpw="7"><div class="tp-opt-val">7</div><div class="tp-opt-label">Tage/W</div></div>
+      </div>
+    </div>
+    <div class="profile-section">
+      <div class="profile-row"><span class="profile-row-label">Training Rhythm</span><span class="profile-row-val" id="prRhythm">Daily</span></div>
+      <div class="profile-row"><span class="profile-row-label">Freezers</span><span class="profile-row-val" id="prFreeze">1</span></div>
+      <div class="profile-row"><span class="profile-row-label">Milestones</span><span class="profile-row-val" id="prMilestones">0 / 4</span></div>
+    </div>
+    <button id="prLogoutBtn" class="profile-reset" style="border-color:rgba(245,166,35,.25);color:var(--am);margin-bottom:10px;display:none">ABMELDEN</button>
+    <button id="prResetBtn" class="profile-reset">ACCOUNT ZURÜCKSETZEN</button>
+  </div></section>
+
+</main>
+
+<nav id="tabBar" class="tabs hidden">
+  <button class="tbn act" data-t="home"><i class="fa-solid fa-fire"></i>Home</button>
+  <button class="tbn" data-t="lb"><i class="fa-solid fa-trophy"></i>Ranks</button>
+  <button class="tbn" data-t="shop"><i class="fa-solid fa-store"></i>Shop</button>
+  <button class="tbn" data-t="groups"><i class="fa-solid fa-user-group"></i>Groups</button>
+  <button class="tbn" data-t="profile"><i class="fa-solid fa-circle-user"></i>Profile</button>
+</nav>
+
+<div id="rPop" class="rpop">
+  <div class="rcard"><div class="ricon"><i class="fa-solid fa-heart-crack"></i></div><div class="rtitle">Streak Lost</div><div class="rtxt">No freezers left. Your streak resets to 0.</div><div class="rsub">Come back stronger. One check-in starts a new run.</div><button id="rDis" class="rdis">KEEP GOING</button></div>
+</div>
+
+<div id="wkModal" class="wk-modal-bg">
+  <div class="wk-card">
+    <button id="wkClose" class="wk-close"><i class="fa-solid fa-xmark"></i></button>
+    <div class="wk-icon-row">
+      <div class="wk-icon-circle"><i class="fa-solid fa-dumbbell"></i></div>
+      <div>
+        <div class="wk-title">Workout loggen</div>
+        <div class="wk-sub">Was hast du heute trainiert?</div>
+      </div>
+    </div>
+    <div class="wk-label">Sportart</div>
+    <select id="wkType" class="wk-select">
+      <optgroup label="Krafttraining">
+        <option value="fullbody" selected>Ganzkörper (Gym)</option>
+        <option value="pushpull">Oberkörper (Push/Pull)</option>
+        <option value="legs">Beine &amp; Po (Leg Day)</option>
+        <option value="back">Rücken &amp; Nacken (Kraft)</option>
+        <option value="chest">Brust &amp; Arme (Kraft)</option>
+        <option value="core">Bauch &amp; Core (Stabilität)</option>
+      </optgroup>
+      <optgroup label="Ausdauer">
+        <option value="run">Laufen (Cardio)</option>
+        <option value="swim">Schwimmen (Cardio)</option>
+        <option value="bike">Radfahren (Cardio)</option>
+        <option value="jumprope">Seilspringen (HIIT)</option>
+        <option value="row">Rudern (Cardio)</option>
+        <option value="box">Boxen (HIIT)</option>
+      </optgroup>
+      <optgroup label="Regeneration">
+        <option value="yoga">Yoga (Flexibilität)</option>
+        <option value="pilates">Pilates (Core)</option>
+        <option value="stretch">Dehnen (Mobility)</option>
+      </optgroup>
+    </select>
+    <div class="wk-label" style="margin-top:14px">Dauer</div>
+    <input id="wkDur" class="wk-dur" type="number" min="1" max="300" value="45" placeholder="Minuten"/>
+    <button id="wkSave" class="wk-save"><i class="fa-solid fa-check"></i>  WORKOUT SPEICHERN</button>
+  </div>
+</div>
+
+<div id="cgModal" class="modal-bg">
+  <div class="modal-card" style="position:relative">
+    <button id="cgClose" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+    <div class="modal-title">Create a Group</div>
+    <div class="fg" style="margin-bottom:12px"><span class="fl">Group Name</span><input id="cgName" class="fi" maxlength="30" placeholder="Alpha Squad"/></div>
+    <div class="fg" style="margin-bottom:16px"><span class="fl">Description</span><input id="cgDesc" class="fi" maxlength="60" placeholder="We never skip leg day"/></div>
+    <button id="cgSave" class="ob-btn-next" style="margin-top:0">CREATE GROUP</button>
+  </div>
+</div>
+
+<div id="gmPopup" class="gm-pop">
+  <div class="gm-card">
+    <button id="gmClose" class="wk-close"><i class="fa-solid fa-xmark"></i></button>
+    <div class="gm-hdr">
+      <div class="gm-av"><img id="gmCharImg" src="flame-male.png" alt=""/></div>
+      <div>
+        <div class="gm-nm" id="gmName">User</div>
+        <div class="gm-sk" id="gmStreak"><i class="fa-solid fa-fire"></i> 0</div>
+      </div>
+    </div>
+    <div class="gm-sec"><i class="fa-solid fa-fire-flame-curved"></i> WAS TRAINIERT DEIN RIVALE?</div>
+    <div class="gm-hm" id="gmHmBody">
+      <img id="gmHmImg" src="flame-male.png" alt=""/>
+      <svg class="hm-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="gmSoft"><feGaussianBlur stdDeviation="2.5"/></filter>
+          <filter id="gmGlow"><feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="gmAura"><feGaussianBlur stdDeviation="6"/></filter>
+        </defs>
+        <ellipse id="gmHead"  class="hm-region hm-passive" cx="50" cy="18" rx="18" ry="15" filter="url(#gmSoft)"/>
+        <ellipse id="gmBack"  class="hm-region" cx="50" cy="40" rx="28" ry="22" filter="url(#gmAura)"/>
+        <ellipse id="gmUpper" class="hm-region" cx="50" cy="37" rx="17" ry="9"  filter="url(#gmSoft)"/>
+        <ellipse id="gmCore"  class="hm-region" cx="50" cy="52" rx="13" ry="8"  filter="url(#gmSoft)"/>
+        <ellipse id="gmLArm"  class="hm-region" cx="25" cy="42" rx="7"  ry="14" filter="url(#gmSoft)"/>
+        <ellipse id="gmRArm"  class="hm-region" cx="75" cy="42" rx="7"  ry="14" filter="url(#gmSoft)"/>
+        <ellipse id="gmLLeg"  class="hm-region" cx="39" cy="76" rx="9"  ry="14" filter="url(#gmSoft)"/>
+        <ellipse id="gmRLeg"  class="hm-region" cx="61" cy="76" rx="9"  ry="14" filter="url(#gmSoft)"/>
+      </svg>
+    </div>
+    <div class="gm-legend">
+      <div class="hm-leg-item"><span class="hm-dot hot"></span> Aktiv</div>
+      <div class="hm-leg-item"><span class="hm-dot med"></span> Moderat</div>
+      <div class="hm-leg-item"><span class="hm-dot cold"></span> Pause</div>
+    </div>
+    <div id="gmBars"></div>
+  </div>
+</div>
+
+<div id="sacModal" class="sac-bg">
+  <div class="sac-card">
+    <div class="sac-icon"><i class="fa-solid fa-fire-flame-curved flame-die"></i></div>
+    <div class="sac-title">Bist du bereit, deine Flamme zu opfern?</div>
+    <div class="sac-text">Eine Änderung deines Rhythmus berechnet deinen Fortschritt neu. Dein aktueller Streak wird dabei auf 0 zurückgesetzt.</div>
+    <div class="sac-streak" id="sacStreak">🔥 0 Tage</div>
+    <button id="sacConfirm" class="sac-confirm"><i class="fa-solid fa-skull"></i>  JA, STREAK ZURÜCKSETZEN</button>
+    <button id="sacCancel" class="sac-cancel">Abbrechen</button>
+  </div>
+</div>
+
+<script type="module">
+import {
+  buyFreezer,
+  createCoinCheckoutSession,
+  createGroup,
+  fetchPurchaseBySessionId,
+  fetchUserGroups,
+  fetchWorkoutHistory,
+  getGroupRanking,
+  getSession,
+  isSupabaseConfigured,
+  joinGroup,
+  logWorkout,
+  normalizeStreak,
+  onAuthChange,
+  setupProfile,
+  signIn,
+  signOut,
+  signUp,
+  updateProfile
+} from "./supabaseClient.js";
+import { COIN_PACKAGES } from "./supabase/functions/_shared/coin-packages.ts";
+
+(function(){
+var SK="gymStreak_v3",DM=864e5;
+var FRZTIERS=[
+  {n:1,coins:350,badge:null},
+  {n:3,coins:900,badge:"Most Popular",cls:"pop-hot"},
+  {n:7,coins:1800,badge:null},
+  {n:15,coins:3500,badge:"Best Value",cls:"pop-val"}
+];
+var COINPACKS=COIN_PACKAGES.map(function(pkg){
+  if(pkg.id==="cp1"){
+    return Object.assign({},pkg,{eur:"0.99"});
+  }
+  return Object.assign({},pkg);
+});
+var MS=[
+  {id:"ff",name:"First Flame",desc:"Complete 10 workout cycles",icon:"fa-solid fa-fire",cy:10,rw:50},
+  {id:"of",name:"On Fire",desc:"Complete 25 workout cycles",icon:"fa-solid fa-fire-flame-curved",cy:25,rw:50},
+  {id:"us",name:"Unstoppable",desc:"Complete 50 workout cycles",icon:"fa-solid fa-meteor",cy:50,rw:100},
+  {id:"lg",name:"Legend",desc:"Complete 100 workout cycles",icon:"fa-solid fa-crown",cy:100,rw:250}
+];
+var FRIENDS=[
+  {name:"Mia",streak:42,av:"M"},{name:"Kai",streak:28,av:"K"},{name:"Jordan",streak:15,av:"J"}
+];
+var DEMO_MEMBERS=[
+  {name:"Mia",ch:"female",sk:42,today:true,wh:null},
+  {name:"Kai",ch:"male",sk:28,today:true,wh:null},
+  {name:"Noah",ch:"male",sk:15,today:false,wh:null},
+  {name:"Lena",ch:"female",sk:8,today:true,wh:null}
+];
+var DEMO_WK_POOL=[
+  ["run","legs","bike","run","legs","swim","run","legs"],
+  ["fullbody","pushpull","back","fullbody","chest","row","fullbody","core"],
+  ["chest","pushpull","box","chest","pushpull","box","chest","back"],
+  ["yoga","pilates","stretch","core","yoga","stretch","pilates","core"]
+];
+var RHYTHMS={1:"Täglich",2:"Alle 2 Tage",3:"Alle 3 Tage",7:"Wöchentlich"};
+var DPW_LABELS={1:"1 Tag / Woche",2:"2 Tage / Woche",3:"3 Tage / Woche",4:"4 Tage / Woche",5:"5 Tage / Woche",6:"6 Tage / Woche",7:"Täglich (7 Tage)"};
+function dpwFromRd(rd){return Math.min(7,Math.max(1,Math.round(7/rd)));}
+function rdFromDpw(dpw){return +(7/dpw).toFixed(2);}
+var pendingDpw=null;
+var LEVEL_MSGS=["Keep pushing!","You're on fire!","Unstoppable!","Legendary status!","Maximum power!"];
+
+var S=load();
+
+var E={
+  ob:$("obView"),obProg:$("obProgressFill"),
+  obS1:$("obS1"),obS2:$("obS2"),obS3:$("obS3"),obS4:$("obS4"),obS5:$("obS5"),
+  obEm:$("obEmailBtn"),obLnk:$("obLoginLink"),
+  obBk2:$("obBack2"),obBk3:$("obBack3"),obBk4:$("obBack4"),
+  obNx2:$("obNext2"),obNx3:$("obNext3"),obNx4:$("obNext4"),obSt:$("obStart"),
+  authShell:$("authShell"),authBadge:$("authBadge"),authTitle:$("authTitle"),authSub:$("authSub"),authSwitchText:$("authSwitchText"),authSwitchLink:$("authSwitchLink"),
+  nameField:$("nameField"),pwConfirmField:$("pwConfirmField"),
+  pwTog:$("pwToggle"),pwConfirmTog:$("pwConfirmToggle"),inN:$("inName"),inE:$("inEmail"),inEErr:$("inEmailErr"),inP:$("inPass"),inPC:$("inPassConfirm"),inPCErr:$("inPassConfirmErr"),
+  rdyImg:$("readyMascotImg"),rdyCn:$("readyCharName"),rdyHl:$("readyHeadline"),
+  hm:$("homeView"),lb:$("lbView"),sh:$("shView"),gr:$("grView"),pr:$("prView"),
+  tb:$("tabBar"),tbar:$("topBar"),
+  tbSk:$("tbStreak"),tbCo:$("tbCoins"),tbFz:$("tbFreeze"),tbAv:$("tbAvatar"),
+  lvTx:$("lvlText"),lvSub:$("lvlSub"),
+  sN:$("streakN"),tmr:$("tmrTx"),ck:$("ckBtn"),
+  msTx:$("msTx"),pF:$("pFill"),
+  misFill:$("missionFill"),misCd:$("missionCountdown"),
+  lbL:$("lbList"),shCo:$("shCoins"),fG:$("frzGrid"),cG:$("coinGrid"),cpSec:$("coinPackSection"),msL:$("msList"),
+  rP:$("rPop"),rD:$("rDis"),
+  ref:$("refUrl"),cpB:$("copyBtn"),waB:$("waBtn"),frL:$("frList"),grL:$("grList"),
+  cgB:$("cgBtn"),cgM:$("cgModal"),cgCl:$("cgClose"),cgN:$("cgName"),cgDe:$("cgDesc"),cgSv:$("cgSave"),
+  grMn:$("grMain"),gdV:$("gdView"),gdBk:$("gdBack"),gdNm:$("gdName"),gdCt:$("gdCount"),gdInv:$("gdInvite"),gdLs:$("gdList"),
+  gdRk:$("gdRankSection"),gdEm:$("gdEmpty"),gdEmCta:$("gdEmptyCta"),
+  gdAI:$("gdAddInput"),gdAB:$("gdAddBtn"),gdEAI:$("gdEmptyAddInput"),gdEAB:$("gdEmptyAddBtn"),
+  gmP:$("gmPopup"),gmCl:$("gmClose"),gmNm:$("gmName"),gmSk:$("gmStreak"),gmCI:$("gmCharImg"),gmHI:$("gmHmImg"),gmBr:$("gmBars"),
+  mImg:$("mascotImg"),mCir:$("mascotCircle"),
+  wkM:$("wkModal"),wkCl:$("wkClose"),wkTy:$("wkType"),wkDu:$("wkDur"),wkSv:$("wkSave"),
+  prAv:$("prAvatar"),prNm:$("prName"),prSk:$("prStreak"),prWk:$("prWorkouts"),prCo:$("prCoins"),
+  prRh:$("prRhythm"),prFz:$("prFreeze"),prMs:$("prMilestones"),prRst:$("prResetBtn"),
+  tpCur:$("tpCurrent"),tpSeg:$("tpSeg"),
+  sacM:$("sacModal"),sacSk:$("sacStreak"),sacOk:$("sacConfirm"),sacNo:$("sacCancel")
+};
+function $(i){return document.getElementById(i)}
+
+var tick=null,curTab="home",selR=1,selChar=null,obCur=1,isLoginMode=false;
+function charImg(ch){return ch==="female"?"flame-female.png":"flame-male.png"}
+function charName(ch){return ch==="female"?"Ember":"Blaze"}
+
+function def(){return{ok:false,nm:"",em:"",pic:"",rd:1,sk:0,fz:1,co:0,cc:0,um:[],ts:null,dt:null,ra:null,gps:[],ch:"male",wh:[]}}
+function load(){
+  try{var r=localStorage.getItem(SK);if(!r){var l=localStorage.getItem("gymStreak_v2");if(l)return mg(JSON.parse(l));l=localStorage.getItem("gymHabitTracker_v1");if(l)return mg(JSON.parse(l));return def()}return mg(JSON.parse(r))}catch(e){return def()}
+}
+function mg(o){var d=def();for(var k in d)if(o[k]===undefined)o[k]=d[k];
+  if(o.isSetup!==undefined){o.ok=o.isSetup;delete o.isSetup}
+  if(o.userName!==undefined){o.nm=o.userName;delete o.userName}
+  if(o.rhythmDays!==undefined){o.rd=o.rhythmDays;delete o.rhythmDays}
+  if(o.streak!==undefined&&o.sk===0){o.sk=o.streak}
+  if(o.freezers!==undefined&&o.fz<=1){o.fz=o.freezers}
+  if(o.coins!==undefined&&o.co===0){o.co=o.coins}
+  if(o.completedCycles!==undefined&&o.cc===0){o.cc=o.completedCycles}
+  if(o.unlockedMilestones!==undefined&&o.um.length===0){o.um=o.unlockedMilestones}
+  if(o.lastCheckInTs!==undefined&&!o.ts){o.ts=o.lastCheckInTs}
+  if(o.lastDueTs!==undefined&&!o.dt){o.dt=o.lastDueTs}
+  if(o.resetAnimationAt!==undefined&&!o.ra){o.ra=o.resetAnimationAt}
+  if(o.groups!==undefined&&o.gps.length===0){o.gps=o.groups}
+  return o;
+}
+function sv(){localStorage.setItem(SK,JSON.stringify(S))}
+
+function due(t,r){return t+r*DM}
+
+function norm(){
+  if(!S.ok||!S.ts)return;var n=Date.now(),nd=due(S.ts,S.rd);
+  while(n>nd+DM){if(S.fz>0){S.fz--;S.ts=nd;nd=due(S.ts,S.rd)}else{S.sk=0;S.cc=0;S.ts=null;S.dt=null;S.ra=Date.now();break}}
+  S.dt=S.ts?due(S.ts,S.rd):null;
+}
+function ckdIn(){return S.ts?Date.now()<due(S.ts,S.rd):false}
+function canCk(){if(!S.ts)return true;var n=Date.now(),d=due(S.ts,S.rd);return n>=d&&n<=d+DM}
+
+function cdTx(){
+  if(!S.ts)return{r:true,t:"Session ready \u2014 let\u2019s go!"};
+  var d=due(S.ts,S.rd),n=Date.now();if(n>=d)return{r:true,t:"Session ready \u2014 let\u2019s go!"};
+  var df=d-n,dd=Math.floor(df/DM);df-=dd*DM;var hh=Math.floor(df/36e5);df-=hh*36e5;var mm=Math.floor(df/6e4);df-=mm*6e4;var ss=Math.floor(df/1e3);
+  var p=[];if(dd>0)p.push(dd+"d");p.push(hh+"h",mm+"m",ss+"s");return{r:false,t:"Next session in "+p.join(" ")}
+}
+
+function updMascot(){
+  var sk=S.sk,p=sk>0;
+  if(E.mImg){E.mImg.src=charImg(S.ch)}
+  var gEl=document.querySelector(".mascot-glow");
+  if(gEl){
+    var op=sk<=0?.08:sk<=10?.20:sk<=30?.30:.42;
+    gEl.style.opacity=String(op);
+  }
+}
+
+function updTopBar(){
+  E.tbSk.textContent=S.sk;
+  E.tbCo.textContent=S.co;
+  E.tbFz.textContent=S.fz;
+  if(S.pic){E.tbAv.src=S.pic;E.tbAv.classList.remove("hidden")}
+  else{E.tbAv.classList.add("hidden")}
+}
+
+function updLevel(){
+  var lv=Math.floor(S.sk/10)+1;
+  E.lvTx.textContent="STREAK LEVEL "+lv;
+  var mi=Math.min(lv-1,LEVEL_MSGS.length-1);
+  E.lvSub.textContent=LEVEL_MSGS[mi];
+}
+
+function updMission(){
+  var done=ckdIn();
+  E.misFill.style.width=done?"100%":"0%";
+  if(done){
+    E.misCd.textContent="\u2714 Mission abgeschlossen!";
+    E.misCd.style.color="var(--ok)";
+  }else{
+    var now=new Date();
+    var eod=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
+    var df=eod-now;
+    var hh=Math.floor(df/36e5);var mm=Math.floor((df%36e5)/6e4);
+    E.misCd.textContent="Endet in "+hh+"h "+mm+"m";
+    E.misCd.style.color="var(--am)";
+  }
+}
+
+function updHome(){
+  updTopBar();updLevel();updMascot();updMission();
+  E.sN.textContent=S.sk;
+  var c=cdTx();E.tmr.textContent=c.t;E.tmr.classList.toggle("tmr-ok",c.r);
+  if(ckdIn()){E.ck.classList.add("done");E.ck.innerHTML='<i class="fa-solid fa-circle-check"></i>  CHECKED IN';E.ck.disabled=true;E.ck.style.opacity=".85"}
+  else{E.ck.classList.remove("done");E.ck.innerHTML='<i class="fa-solid fa-dumbbell"></i>  LOG WORKOUT';E.ck.disabled=!canCk();E.ck.style.opacity=E.ck.disabled?".5":"1"}
+  var ic=S.cc%10;E.pF.style.width=((ic/10)*100)+"%";E.msTx.textContent=ic+" / 10 cycles";
+}
+
+var MED=['<i class="fa-solid fa-trophy rm" style="color:#ffd700"></i>','<i class="fa-solid fa-medal rm" style="color:#c0c0c0"></i>','<i class="fa-solid fa-medal rm" style="color:#cd7f32"></i>'];
+function updLb(){
+  var fk=[{n:"Mia",s:54},{n:"Kai",s:39},{n:"Noah",s:27},{n:"Lena",s:16}];
+  var me={n:S.nm||"You",s:S.sk,me:1};
+  var a=fk.concat([me]).sort(function(a,b){return b.s-a.s});
+  E.lbL.innerHTML="";a.forEach(function(u,i){
+    var r=document.createElement("div");r.className="lr"+(u.me?" me":"");
+    var rk=i<3?'<div class="rk">'+MED[i]+'</div>':'<div class="rk">#'+(i+1)+'</div>';
+    var nm='<div class="ln">'+esc(u.n)+(u.me?'<span class="yt">(You)</span>':'')+'</div>';
+    r.innerHTML=rk+nm+'<div class="ls">'+u.s+'d</div>';E.lbL.appendChild(r)
+  })
+}
+
+function canAfford(price){return S.co>=price}
+
+function scrollToCoins(){
+  if(E.cpSec){E.cpSec.scrollIntoView({behavior:"smooth",block:"center"})}
+}
+
+function updShop(){
+  E.shCo.textContent=S.co;
+
+  /* ── Streak Freezers (coins only, no euro prices shown) ── */
+  E.fG.innerHTML="";
+  FRZTIERS.forEach(function(t){
+    var d=document.createElement("div");d.className="ftc";
+    var bg=t.badge?'<div class="pop-badge '+(t.cls||"")+'">'+t.badge+'</div>':"";
+    var afford=canAfford(t.coins);
+    var btn=afford
+      ?'<button class="ftc-coin-buy" data-fc="'+t.n+'"><i class="fa-solid fa-coins"></i> '+t.coins+' Coins</button>'
+      :'<button class="ftc-need" data-fn="1"><i class="fa-solid fa-coins"></i> '+t.coins+' Coins &middot; Coins aufladen</button>';
+    d.innerHTML=bg+
+      '<div class="ftc-head"><div class="ftc-icon"><i class="fa-solid fa-snowflake"></i></div><div class="ftc-name">'+t.n+' Freezer'+(t.n>1?'s':'')+'</div></div>'+
+      '<div class="ftc-desc">Schützt deinen Streak für '+t.n+' verpasste'+(t.n>1?' Tage':' Tag')+'</div>'+btn;
+    E.fG.appendChild(d)
+  });
+  E.fG.querySelectorAll("[data-fc]").forEach(function(b){
+    b.addEventListener("click",function(){
+      var n=Number(b.dataset.fc),tier=FRZTIERS.find(function(t){return t.n===n});
+      if(!tier||!canAfford(tier.coins))return;
+      S.co-=tier.coins;S.fz+=n;sv();
+      if(typeof useSupabase!=="undefined"&&useSupabase){supaBuyFreezer(tier.coins,n)}
+      toast('<i class="fa-solid fa-snowflake"></i> +'+n+' Freezer'+(n>1?'s':'')+' gekauft!',"t-fr");updAll()
+    })
+  });
+  E.fG.querySelectorAll("[data-fn]").forEach(function(b){
+    b.addEventListener("click",scrollToCoins)
+  });
+
+  /* ── Coin Packages (EUR → Coins, the only place euro prices appear) ── */
+  E.cG.innerHTML="";
+  COINPACKS.forEach(function(p){
+    var d=document.createElement("div");d.className="ftc";
+    var bg=p.badge?'<div class="pop-badge '+(p.cls||"")+'">'+p.badge+'</div>':"";
+    d.innerHTML=bg+
+      '<div class="ftc-head"><div class="cp-icon"><i class="fa-solid fa-coins"></i></div><div><div class="cp-coins">'+p.coins.toLocaleString("de-DE")+' Coins</div></div></div>'+
+      '<button class="ftc-coin-buy" data-cp="'+p.id+'">\u20ac'+p.eur+'</button>';
+    E.cG.appendChild(d)
+  });
+  E.cG.querySelectorAll("[data-cp]").forEach(function(b){
+    b.addEventListener("click",async function(){
+      var pk=COINPACKS.find(function(p){return p.id===b.dataset.cp});
+      if(!pk)return;
+      if(typeof useSupabase!=="undefined"&&useSupabase){
+        await supaStartCoinCheckout(pk.id);
+        return;
+      }
+      toast('<i class="fa-solid fa-credit-card"></i> Stripe ist nur mit Supabase aktiv.',"t-fr");
+    })
+  });
+
+  /* ── Milestones ── */
+  E.msL.innerHTML="";
+  MS.forEach(function(m){
+    var ul=S.um.indexOf(m.id)!==-1;
+    var pc=Math.min(100,Math.round((S.cc/m.cy)*100));
+    var d=document.createElement("div");d.className="mi "+(ul?"ul":"lk");
+    var prog=ul?'<div class="mub"><i class="fa-solid fa-check-circle"></i> Claimed</div>'
+      :'<div class="mpr"><div class="mpb"><div class="mpf" style="width:'+pc+'%"></div></div><div class="mpt">'+S.cc+' / '+m.cy+'</div></div>';
+    d.innerHTML=
+      '<div class="miw"><i class="'+m.icon+'"></i></div>'+
+      '<div><div class="min">'+esc(m.name)+'</div><div class="mid">'+esc(m.desc)+'</div>'+prog+'</div>'+
+      '<div class="mrw"><i class="fa-solid fa-coins"></i> '+m.rw+'</div>';
+    E.msL.appendChild(d)
+  })
+}
+
+function updGrp(){
+  var code=(S.nm||"USER").toUpperCase().replace(/\s/g,"").substring(0,8)+"123";
+  E.ref.value="gymstreak.app/join/"+code;
+  var joinSec=document.getElementById("joinGroupSection");
+  if(joinSec)joinSec.style.display=(typeof useSupabase!=="undefined"&&useSupabase)?"block":"none";
+  E.frL.innerHTML="";
+  FRIENDS.forEach(function(f){
+    var d=document.createElement("div");d.className="fr-row";
+    d.innerHTML='<div class="fr-av">'+f.av+'</div><div><div class="fr-nm">'+esc(f.name)+'</div><div class="fr-sk">'+f.streak+'d streak</div></div><div class="fr-st"><i class="fa-solid fa-fire" style="color:var(--am)"></i> '+f.streak+'</div>';
+    E.frL.appendChild(d)
+  });
+  E.grL.innerHTML="";
+  S.gps.forEach(function(g,gi){
+    ensureGroupMembers(g);
+    syncMeInGroup(g);
+    var mc=g.members?g.members.length:1;
+    var avgSk=0;if(g.members)g.members.forEach(function(m){avgSk+=m.sk||0});
+    avgSk=mc>0?Math.round(avgSk/mc):0;
+    var d=document.createElement("div");d.className="gc";
+    d.innerHTML='<div class="gc-info"><div class="gc-name">'+esc(g.name)+'</div><div class="gc-meta">'+mc+' Mitglied'+(mc>1?'er':'')+' \u00b7 \u00d8 Streak '+avgSk+'d</div></div><button class="gc-view">View</button>';
+    var btn=d.querySelector(".gc-view");
+    (function(group,idx){btn.addEventListener("click",function(e){e.stopPropagation();
+      if(typeof useSupabase!=="undefined"&&useSupabase&&group.id){supaOpenGroupDetail(group)}else{openGroupDetail(group,idx)}
+    })})(g,gi);
+    E.grL.appendChild(d)
+  })
+}
+
+function updProfile(){
+  if(S.pic){
+    E.prAv.innerHTML='<img src="'+esc(S.pic)+'" style="width:100%;height:100%;border-radius:50%;object-fit:cover"/>';
+  }else{
+    E.prAv.textContent=(S.nm||"U").charAt(0).toUpperCase();
+  }
+  E.prNm.textContent=S.nm||"User";
+  E.prSk.textContent=S.sk;
+  E.prWk.textContent=S.cc;
+  E.prCo.textContent=S.co;
+  var curDpw=dpwFromRd(S.rd);
+  E.prRh.textContent=DPW_LABELS[curDpw]||RHYTHMS[S.rd]||"Täglich";
+  E.prFz.textContent=S.fz;
+  E.prMs.textContent=S.um.length+" / "+MS.length;
+  E.tpCur.textContent="Aktuell: "+( DPW_LABELS[curDpw]||RHYTHMS[S.rd]||"Täglich");
+  var opts=E.tpSeg.querySelectorAll(".tp-opt");
+  for(var i=0;i<opts.length;i++){
+    var d=parseInt(opts[i].getAttribute("data-dpw"),10);
+    opts[i].classList.toggle("active",d===curDpw);
+  }
+  var lb=document.getElementById("prLogoutBtn");
+  if(lb)lb.style.display=(typeof useSupabase!=="undefined"&&useSupabase)?"block":"none";
+}
+
+function ckMs(){
+  var nw=[];MS.forEach(function(m){
+    if(S.cc>=m.cy&&S.um.indexOf(m.id)===-1){S.um.push(m.id);S.co+=m.rw;nw.push({n:m.name,r:m.rw})}
+  });
+  if(nw.length){sv();nw.forEach(function(x){toast('<i class="fa-solid fa-award"></i> '+esc(x.n)+' +'+x.r+' coins!',"t-co")})}
+}
+
+function esc(s){return s.replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+
+function toast(h,c){var t=document.createElement("div");t.className="toast "+(c||"t-fr");t.innerHTML=h;document.body.appendChild(t);t.addEventListener("animationend",function(){t.remove()})}
+
+function disR(){E.rP.classList.remove("show");S.ra=null;sv()}
+function showR(){if(!S.ra)return;if(Date.now()-S.ra>8e3){S.ra=null;sv();return}E.rP.classList.add("show")}
+
+function celeb(){E.ck.classList.add("burst");E.sN.classList.add("pulse");if(E.mCir){E.mCir.classList.add("mascot-celebrate");setTimeout(function(){E.mCir.classList.remove("mascot-celebrate")},850)}setTimeout(function(){E.ck.classList.remove("burst")},650);setTimeout(function(){E.sN.classList.remove("pulse")},500)}
+
+var WK_META={
+  fullbody:{l:"Ganzkörper",c:"Kraft"},pushpull:{l:"Oberkörper",c:"Kraft"},legs:{l:"Beine & Po",c:"Kraft"},
+  back:{l:"Rücken & Nacken",c:"Kraft"},chest:{l:"Brust & Arme",c:"Kraft"},core:{l:"Bauch & Core",c:"Kraft"},
+  run:{l:"Laufen",c:"Cardio"},swim:{l:"Schwimmen",c:"Cardio"},bike:{l:"Radfahren",c:"Cardio"},
+  jumprope:{l:"Seilspringen",c:"HIIT"},row:{l:"Rudern",c:"Cardio"},box:{l:"Boxen",c:"HIIT"},
+  yoga:{l:"Yoga",c:"Regen"},pilates:{l:"Pilates",c:"Regen"},stretch:{l:"Dehnen",c:"Regen"}
+};
+
+var HM_IDS=["upper","core","arms","legs","back"];
+var HM_EL_MAP={upper:"hmUpper",core:"hmCore",arms:["hmLArm","hmRArm"],legs:["hmLLeg","hmRLeg"],back:"hmBack"};
+var WK_MUSCLES={
+  fullbody:["upper","core","arms","legs","back"],
+  pushpull:["upper","arms","back"],
+  legs:["legs","core"],
+  back:["back","upper"],
+  chest:["upper","arms"],
+  core:["core"],
+  run:["legs"],
+  swim:["upper","arms","legs","back"],
+  bike:["legs"],
+  jumprope:["legs","arms"],
+  row:["back","arms","upper"],
+  box:["arms","upper","core"],
+  yoga:["core","legs","arms","back"],
+  pilates:["core"],
+  stretch:["legs","arms","core","back"]
+};
+var HM_BAR_GROUPS=[
+  {label:"Brust & Schultern",keys:["upper"]},
+  {label:"Bauch & Core",keys:["core"]},
+  {label:"Arme",keys:["arms"]},
+  {label:"Beine & Po",keys:["legs"]},
+  {label:"Rücken",keys:["back"]}
+];
+var HM_MAX=12;
+
+function applyHmToSvg(counts,elMap,glowId,softId,auraId,headId,streak){
+  for(var i=0;i<HM_IDS.length;i++){
+    var k=HM_IDS[i],ids=elMap[k];
+    if(!ids)continue;
+    var arr=Array.isArray(ids)?ids:[ids];
+    var c=counts[k]||0;
+    for(var j=0;j<arr.length;j++){
+      var el=document.getElementById(arr[j]);
+      if(!el)continue;
+      el.classList.remove("hm-hot","hm-med","hm-cold","hm-aura");
+      if(k==="back"){
+        el.classList.add("hm-aura");
+        el.style.opacity=c>=8?"0.4":c>=4?"0.2":c>=1?"0.08":"0";
+        el.setAttribute("filter","url(#"+(auraId||softId)+")");
+      }else{
+        if(c>=8){el.classList.add("hm-hot");el.setAttribute("filter","url(#"+glowId+")")}
+        else{el.setAttribute("filter","url(#"+softId+")");
+          if(c>=4)el.classList.add("hm-med");
+          else if(c>=1)el.classList.add("hm-cold");
+        }
+      }
+    }
+  }
+  var hEl=headId?document.getElementById(headId):null;
+  if(hEl){
+    hEl.classList.remove("hm-glow-lo","hm-glow-md","hm-glow-hi");
+    var sk=typeof streak==="number"?streak:S.sk;
+    if(sk>=30)hEl.classList.add("hm-glow-hi");
+    else if(sk>=10)hEl.classList.add("hm-glow-md");
+    else if(sk>=1)hEl.classList.add("hm-glow-lo");
+  }
+}
+
+function updateMascotHeatmap(){
+  var counts=computeHmCounts(S.wh);
+  applyHmToSvg(counts,HM_EL_MAP,"hmGlow","hmSoft","hmAura","hmHead",S.sk);
+  var barsEl=document.getElementById("hmBars");
+  if(barsEl)renderHmBars(counts,barsEl);
+}
+
+function computeHmCounts(wh){
+  var now=Date.now(),cutoff=now-30*DM,counts={};
+  for(var i=0;i<HM_IDS.length;i++)counts[HM_IDS[i]]=0;
+  if(wh&&wh.length){
+    for(var i=0;i<wh.length;i++){
+      var w=wh[i];
+      if(w.at>=cutoff){var m=WK_MUSCLES[w.t];if(m)for(var j=0;j<m.length;j++)counts[m[j]]++}
+    }
+  }
+  return counts;
+}
+
+function recentWkCount(wh){
+  var now=Date.now(),cutoff=now-30*DM,c=0;
+  if(wh&&wh.length)for(var i=0;i<wh.length;i++)if(wh[i].at>=cutoff)c++;
+  return c;
+}
+
+function initDemoMembers(){
+  if(DEMO_MEMBERS[0].wh)return;
+  var now=Date.now();
+  DEMO_MEMBERS.forEach(function(m,mi){
+    var pool=DEMO_WK_POOL[mi]||DEMO_WK_POOL[0];
+    var count=Math.round(m.sk*0.5)+3;
+    m.wh=[];
+    for(var i=0;i<count;i++){
+      var t=pool[i%pool.length];
+      var daysAgo=Math.floor(Math.random()*30);
+      m.wh.push({t:t,cat:(WK_META[t]||{c:"Kraft"}).c,dur:30+Math.floor(Math.random()*45),at:now-daysAgo*DM});
+    }
+  });
+}
+
+function renderHmBars(counts,targetEl){
+  var html="";
+  for(var g=0;g<HM_BAR_GROUPS.length;g++){
+    var grp=HM_BAR_GROUPS[g],sum=0;
+    for(var j=0;j<grp.keys.length;j++)sum+=counts[grp.keys[j]];
+    var avg=grp.keys.length>1?Math.round(sum/grp.keys.length):sum;
+    var pct=Math.min(100,Math.round((avg/HM_MAX)*100));
+    var col=avg>=8?"#FF9900":avg>=4?"#E07A1A":avg>=1?"#6b5a4a":"var(--bg3)";
+    var gw=avg>=8?" box-shadow:0 0 8px rgba(255,153,0,.4)":"";
+    html+='<div class="hm-bar-row"><div class="hm-bar-label">'+grp.label+'</div><div class="hm-bar-track"><div class="hm-bar-fill" style="width:'+pct+"%;background:"+col+";"+gw+'"></div></div><div class="hm-bar-count">'+avg+" / "+HM_MAX+"</div></div>";
+  }
+  targetEl.innerHTML=html;
+}
+
+var curGroupIdx=-1;
+
+function ensureGroupMembers(g){
+  if(!g.members)g.members=[{name:S.nm||"Du",ch:S.ch||"male",sk:S.sk,wh:S.wh,me:true}];
+}
+
+function syncMeInGroup(g){
+  if(!g.members)return;
+  for(var i=0;i<g.members.length;i++){
+    if(g.members[i].me){g.members[i].name=S.nm||"Du";g.members[i].ch=S.ch||"male";g.members[i].sk=S.sk;g.members[i].wh=S.wh;g.members[i].today=ckdIn();break}
+  }
+}
+
+function openGroupDetail(group,gIdx){
+  curGroupIdx=typeof gIdx==="number"?gIdx:-1;
+  E.grMn.classList.add("hidden");
+  E.gdV.classList.remove("hidden");
+  E.gdNm.textContent=group.name;
+  ensureGroupMembers(group);
+  syncMeInGroup(group);
+
+  var members=group.members.slice();
+  members.forEach(function(m){if(m.me)m.today=ckdIn()});
+  members.sort(function(a,b){return(b.sk||0)-(a.sk||0)});
+
+  E.gdCt.textContent=members.length+" Mitglied"+(members.length>1?"er":"");
+
+  var soloAdmin=members.length<=1;
+  renderGroupLb(members);
+  E.gdRk.classList.remove("hidden");
+  E.gdEm.classList.toggle("hidden",!soloAdmin);
+  var addSec=document.getElementById("gdAddSection");
+  if(addSec)addSec.classList.toggle("hidden",soloAdmin);
+}
+
+function closeGroupDetail(){
+  curGroupIdx=-1;
+  E.gdV.classList.add("hidden");
+  E.grMn.classList.remove("hidden");
+}
+
+function addSimulatedMember(inputEl){
+  var nm=inputEl.value.trim();
+  if(!nm)return inputEl.focus();
+  if(curGroupIdx<0||!S.gps[curGroupIdx])return;
+  var chars=["male","female"];
+  var ch=chars[Math.floor(Math.random()*chars.length)];
+  var sk=Math.floor(Math.random()*30)+1;
+  var wh=genSimWh(sk);
+  S.gps[curGroupIdx].members.push({name:nm,ch:ch,sk:sk,today:Math.random()>0.4,wh:wh,me:false});
+  sv();
+  inputEl.value="";
+  toast('<i class="fa-solid fa-user-plus"></i> '+esc(nm)+' beigetreten!',"t-ok");
+  openGroupDetail(S.gps[curGroupIdx],curGroupIdx);
+}
+
+function genSimWh(sk){
+  var wh=[],now=Date.now(),types=["fullbody","pushpull","legs","back","chest","core","run","swim","bike","box","yoga"];
+  var count=Math.round(sk*0.4)+2;
+  for(var i=0;i<count;i++){
+    var t=types[Math.floor(Math.random()*types.length)];
+    wh.push({t:t,cat:(WK_META[t]||{c:"Kraft"}).c,dur:30+Math.floor(Math.random()*40),at:now-Math.floor(Math.random()*30)*DM});
+  }
+  return wh;
+}
+
+function copyGroupInvite(groupName){
+  var txt="Tritt meiner GymStreak-Gruppe bei! Gruppe: "+groupName;
+  navigator.clipboard.writeText(txt).then(function(){toast('<i class="fa-solid fa-paper-plane"></i> Einladungstext kopiert!',"t-ok")});
+}
+
+function renderGroupLb(members){
+  E.gdLs.innerHTML="";
+  var GMED=['<i class="fa-solid fa-trophy" style="color:#ffd700;font-size:1rem"></i>','<i class="fa-solid fa-medal" style="color:#c0c0c0;font-size:1rem"></i>','<i class="fa-solid fa-medal" style="color:#cd7f32;font-size:1rem"></i>'];
+  members.forEach(function(m,i){
+    var row=document.createElement("div");
+    var cls="gd-row";
+    if(m.me)cls+=" me";
+    if(i===0)cls+=" top1";else if(i===1)cls+=" top2";else if(i===2)cls+=" top3";
+    row.className=cls;
+
+    var rk=i<3?GMED[i]:"#"+(i+1);
+    var wkc=recentWkCount(m.wh);
+    var avCls="gd-av"+(wkc>=15?" glow-hi":wkc>=8?" glow-md":"");
+    var st=m.today?'<div class="gd-st done"><i class="fa-solid fa-check"></i> Done</div>':'<div class="gd-st pend">Offen</div>';
+
+    row.innerHTML='<div class="gd-rank">'+rk+'</div>'+
+      '<div class="'+avCls+'"><img src="'+charImg(m.ch)+'" alt=""/></div>'+
+      '<div class="gd-info"><div class="gd-mn">'+esc(m.name)+(m.me?'<span class="gd-mt">(Du)</span>':'')+'</div></div>'+
+      '<div class="gd-sb"><i class="fa-solid fa-fire"></i> '+m.sk+'</div>'+st;
+
+    (function(member){row.addEventListener("click",function(){openMemberPopup(member)})})(m);
+    E.gdLs.appendChild(row);
+  });
+}
+
+var GM_EL_MAP={upper:"gmUpper",core:"gmCore",arms:["gmLArm","gmRArm"],legs:["gmLLeg","gmRLeg"],back:"gmBack"};
+
+function openMemberPopup(member){
+  E.gmP.classList.add("show");
+  E.gmNm.textContent=member.name;
+  E.gmSk.innerHTML='<i class="fa-solid fa-fire"></i> '+member.sk+'d Streak';
+  E.gmCI.src=charImg(member.ch);
+  E.gmHI.src=charImg(member.ch);
+
+  var counts=computeHmCounts(member.wh);
+  applyHmToSvg(counts,GM_EL_MAP,"gmGlow","gmSoft","gmAura","gmHead",member.sk);
+  renderHmBars(counts,E.gmBr);
+}
+
+function closeMemberPopup(){E.gmP.classList.remove("show")}
+
+function logW(){
+  norm();if(!canCk())return;
+  var wt=E.wkTy?E.wkTy.value:"fullbody";
+  var dur=E.wkDu?Math.max(1,Math.min(300,parseInt(E.wkDu.value,10)||45)):45;
+  var meta=WK_META[wt]||{l:"Workout",c:"Kraft"};
+  S.sk++;S.cc++;S.ts=Date.now();S.dt=due(S.ts,S.rd);S.co+=10;
+  S.wh.push({t:wt,cat:meta.c,dur:dur,at:S.ts});
+  var ef=false;if(S.cc%10===0){S.fz++;ef=true}
+  sv();celeb();ckMs();updAll();
+  toast('<i class="fa-solid fa-circle-check"></i> '+esc(meta.l)+' ('+dur+'min) geloggt! +10 Coins',"t-co");
+  if(ef)setTimeout(function(){toast('<i class="fa-regular fa-snowflake"></i> +1 Freezer earned!',"t-fr")},700)
+}
+
+function setT(t){
+  curTab=t;
+  document.querySelectorAll(".tbn").forEach(function(b){b.classList.toggle("act",b.dataset.t===t)});
+  E.hm.classList.toggle("hidden",t!=="home");
+  E.lb.classList.toggle("hidden",t!=="lb");
+  E.sh.classList.toggle("hidden",t!=="shop");
+  E.gr.classList.toggle("hidden",t!=="groups");
+  E.pr.classList.toggle("hidden",t!=="profile");
+  if(t==="groups"){E.grMn.classList.remove("hidden");E.gdV.classList.add("hidden")}
+}
+
+function obSteps(){return[E.obS1,E.obS2,E.obS3,E.obS4,E.obS5]}
+function goStep(n){
+  var steps=obSteps(),prev=obCur;obCur=n;
+  var pct=n===1?20:n===2?40:n===3?60:n===4?80:100;
+  E.obProg.style.width=pct+"%";
+  steps.forEach(function(s,i){
+    var idx=i+1;
+    s.classList.remove("active","exit-left");
+    if(idx===n)s.classList.add("active");
+    else if(idx<n)s.classList.add("exit-left");
+  });
+  if(n===5){
+    E.rdyImg.src=charImg(selChar);
+    E.rdyCn.textContent=charName(selChar);
+    var nm=E.inN.value.trim()||S.nm||"Champ";
+    E.rdyHl.textContent="Let's go, "+nm+"! \uD83D\uDD25";
+  }
+}
+
+function trHome(){
+  E.ob.classList.add("hidden");
+  E.tb.classList.remove("hidden");
+  E.tbar.classList.remove("hidden");
+  E.hm.classList.remove("hidden");
+  E.hm.classList.add("vfi");
+  E.hm.addEventListener("animationend",function h(){E.hm.classList.remove("vfi");E.hm.removeEventListener("animationend",h)})
+}
+
+function showOnboarding(step){
+  E.tbar.classList.add("hidden");
+  E.tb.classList.add("hidden");
+  E.hm.classList.add("hidden");
+  E.lb.classList.add("hidden");
+  E.sh.classList.add("hidden");
+  E.gr.classList.add("hidden");
+  E.pr.classList.add("hidden");
+  E.ob.classList.remove("hidden");
+  goStep(step||1);
+}
+
+function setAuthMode(loginMode){
+  isLoginMode=loginMode;
+  if(E.authShell)E.authShell.className="auth-shell "+(loginMode?"auth-login":"auth-register");
+  if(E.authBadge)E.authBadge.innerHTML=loginMode?'<i class="fa-solid fa-right-to-bracket"></i> Login':'<i class="fa-solid fa-user-plus"></i> Registrierung';
+  if(E.authTitle)E.authTitle.textContent=loginMode?"Willkommen zurück":"Konto erstellen";
+  if(E.authSub)E.authSub.textContent=loginMode?"Melde dich mit deiner E-Mail und deinem Passwort an.":"Lege dein Konto an und starte direkt los.";
+  if(E.pwConfirmField)E.pwConfirmField.classList.toggle("hidden-field",loginMode);
+  if(E.nameField)E.nameField.classList.add("hidden-field");
+  if(E.authSwitchText)E.authSwitchText.textContent=loginMode?"Noch kein Konto?":"Bereits ein Konto?";
+  if(E.authSwitchLink)E.authSwitchLink.textContent=loginMode?"Jetzt registrieren":"Jetzt einloggen";
+  if(E.obNx2){
+    E.obNx2.textContent=loginMode?"Einloggen":"Registrieren";
+    E.obNx2.classList.toggle("login-mode",loginMode);
+    E.obNx2.classList.toggle("register-mode",!loginMode);
+  }
+  if(loginMode&&E.inPC){E.inPC.value=""}
+  updatePasswordConfirmError();
+  updateAuthFormState();
+}
+
+function isValidEmail(email){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test((email||"").trim());
+}
+
+function deriveUsernameFromEmail(email){
+  var base=(email.split("@")[0]||"user").toLowerCase().replace(/[^a-z0-9_]/g,"").slice(0,14);
+  if(!base)base="user";
+  return base+"_"+Math.random().toString(36).slice(2,6);
+}
+
+function getAuthErrorMessage(err){
+  var msg=((err&&err.message)||"").trim();
+  var code=((err&&err.code)||"").trim();
+  if(msg==="Invalid login credentials"||code==="invalid_credentials"||/invalid login credentials/i.test(msg))return "E-Mail oder Passwort falsch";
+  if(msg==="User already registered"||code==="user_already_exists"||/already registered/i.test(msg))return "Diese E-Mail ist bereits registriert";
+  if(msg==="Email not confirmed"||code==="email_not_confirmed"||/email not confirmed/i.test(msg))return "Bitte bestätige zuerst deine E-Mail";
+  if(code==="over_email_send_rate_limit"||/rate limit/i.test(msg))return "Bitte kurz warten und es dann erneut versuchen";
+  if(/database error/i.test(msg))return "Login gerade nicht möglich. Bitte prüfe dein Supabase-Setup.";
+  return msg||"Ein Fehler ist aufgetreten";
+}
+
+function clearCheckoutParams(){
+  var url=new URL(window.location.href);
+  url.searchParams.delete("checkout");
+  url.searchParams.delete("session_id");
+  window.history.replaceState({}, "", url.toString());
+}
+
+function updateEmailError(){
+  var email=E.inE?E.inE.value.trim():"";
+  var show=email.length>0&&!isValidEmail(email);
+  if(E.inEErr)E.inEErr.textContent=show?"Bitte gib eine gültige E-Mail-Adresse ein.":"";
+  if(E.inE)E.inE.classList.toggle("err",show);
+  return !show;
+}
+
+function updatePasswordConfirmError(){
+  if(isLoginMode){
+    if(E.inPCErr)E.inPCErr.textContent="";
+    if(E.inPC)E.inPC.classList.remove("err");
+    return true;
+  }
+  var pw=E.inP?E.inP.value:"";
+  var pc=E.inPC?E.inPC.value:"";
+  var show=pc.length>0&&pw!==pc;
+  if(E.inPCErr)E.inPCErr.textContent=show?"Passwörter stimmen nicht überein":"";
+  if(E.inPC)E.inPC.classList.toggle("err",show);
+  return !show;
+}
+
+function updateAuthFormState(){
+  var emailOk=updateEmailError();
+  var hasPassword=!!(E.inP&&E.inP.value.trim());
+  var confirmOk=updatePasswordConfirmError();
+  if(E.obNx2){
+    var blocked=!(emailOk&&hasPassword&&confirmOk&&(isLoginMode||!!(E.inPC&&E.inPC.value.trim())));
+    E.obNx2.classList.toggle("is-disabled",blocked);
+    E.obNx2.setAttribute("aria-disabled",blocked?"true":"false");
+  }
+}
+
+function bind(){
+  E.obEm.addEventListener("click",function(){setAuthMode(false);goStep(2)});
+  E.obLnk.addEventListener("click",function(){
+    setAuthMode(true);goStep(2);
+  });
+  if(E.authSwitchLink){
+    E.authSwitchLink.addEventListener("click",function(){
+      setAuthMode(!isLoginMode);
+    });
+  }
+
+  E.obBk2.addEventListener("click",function(){goStep(1)});
+  E.obBk3.addEventListener("click",function(){goStep(S.pic?1:E.inN.value.trim()?2:1)});
+  E.obBk4.addEventListener("click",function(){goStep(3)});
+
+  E.pwTog.addEventListener("click",function(){
+    var pw=E.inP,ic=E.pwTog.querySelector("i");
+    if(pw.type==="password"){pw.type="text";ic.className="fa-solid fa-eye-slash"}
+    else{pw.type="password";ic.className="fa-solid fa-eye"}
+  });
+  if(E.pwConfirmTog){
+    E.pwConfirmTog.addEventListener("click",function(){
+      var pw=E.inPC,ic=E.pwConfirmTog.querySelector("i");
+      if(pw.type==="password"){pw.type="text";ic.className="fa-solid fa-eye-slash"}
+      else{pw.type="password";ic.className="fa-solid fa-eye"}
+    });
+  }
+  E.inE.addEventListener("input",updateAuthFormState);
+  E.inE.addEventListener("blur",updateAuthFormState);
+  E.inP.addEventListener("input",updateAuthFormState);
+  E.inP.addEventListener("blur",updateAuthFormState);
+  if(E.inPC){
+    E.inPC.addEventListener("input",updateAuthFormState);
+    E.inPC.addEventListener("blur",updateAuthFormState);
+  }
+
+  E.obNx2.addEventListener("click",function(){
+    if(!updateEmailError()){E.inE.focus();return}
+    if(!updatePasswordConfirmError()&&!isLoginMode){E.inPC.focus();return}
+    if(!E.inP.value.trim()){E.inP.focus();return}
+    if(!isLoginMode&&!E.inPC.value.trim()){E.inPC.focus();return}
+    if(typeof useSupabase!=="undefined"&&useSupabase){
+      if(isLoginMode){supaSignIn()}else{
+        supaSignUp()
+      }
+      return;
+    }
+    var nm=E.inN.value.trim();if(!nm){E.inN.focus();return}
+    goStep(3)
+  });
+
+  document.querySelectorAll(".char-card").forEach(function(c){
+    c.addEventListener("click",function(){
+      document.querySelectorAll(".char-card").forEach(function(x){x.classList.remove("sel")});
+      c.classList.add("sel");selChar=c.dataset.char;
+      E.obNx3.disabled=false
+    })
+  });
+  E.obNx3.addEventListener("click",function(){if(selChar)goStep(4)});
+
+  document.querySelectorAll(".rhythm-card").forEach(function(c){
+    c.addEventListener("click",function(){
+      document.querySelectorAll(".rhythm-card").forEach(function(x){x.classList.remove("sel")});
+      c.classList.add("sel");selR=Number(c.dataset.rv)
+    })
+  });
+  E.obNx4.addEventListener("click",function(){goStep(5)});
+
+  E.obSt.addEventListener("click",function(){
+    if(typeof useSupabase!=="undefined"&&useSupabase){supaFinishOnboarding();return}
+    var nm=E.inN.value.trim()||"Champ";
+    var em=E.inE?E.inE.value.trim():"";
+    S.ok=true;S.nm=nm;S.rd=selR;S.ch=selChar||"male";S.sk=0;S.cc=0;S.fz=1;S.co=0;S.um=[];S.ts=null;S.dt=null;S.ra=null;S.gps=[];
+    if(em&&!S.em)S.em=em;
+    sv();trHome();updAll()
+  });
+
+  E.ck.addEventListener("click",function(){
+    if(ckdIn()||!canCk())return;
+    E.wkM.classList.add("show")
+  });
+  E.wkCl.addEventListener("click",function(){E.wkM.classList.remove("show")});
+  E.wkM.addEventListener("click",function(e){if(e.target===E.wkM)E.wkM.classList.remove("show")});
+  E.wkSv.addEventListener("click",function(){
+    E.wkM.classList.remove("show");
+    if(typeof useSupabase!=="undefined"&&useSupabase){supaLogWorkout()}else{logW()}
+  });
+  E.rD.addEventListener("click",disR);
+  E.rP.addEventListener("click",function(e){if(e.target===E.rP)disR()});
+  document.querySelectorAll(".tbn").forEach(function(b){b.addEventListener("click",function(){setT(b.dataset.t)})});
+
+  E.cpB.addEventListener("click",function(){navigator.clipboard.writeText(E.ref.value).then(function(){toast('<i class="fa-solid fa-check"></i> Link copied!',"t-ok")})});
+  E.waB.addEventListener("click",function(){window.open("https://wa.me/?text="+encodeURIComponent("Join me on GymStreak! "+E.ref.value),"_blank")});
+
+  E.cgB.addEventListener("click",function(){E.cgM.classList.add("show");E.cgN.value="";E.cgDe.value=""});
+  var joinBtn=document.getElementById("joinCodeBtn");
+  var joinInput=document.getElementById("joinCodeInput");
+  if(joinBtn){joinBtn.addEventListener("click",function(){supaJoinGroup()})}
+  if(joinInput){joinInput.addEventListener("keydown",function(e){if(e.key==="Enter")supaJoinGroup()})}
+  E.cgCl.addEventListener("click",function(){E.cgM.classList.remove("show")});
+  E.cgM.addEventListener("click",function(e){if(e.target===E.cgM)E.cgM.classList.remove("show")});
+  E.cgSv.addEventListener("click",function(){
+    if(typeof useSupabase!=="undefined"&&useSupabase){supaCreateGroup();return}
+    var nm=E.cgN.value.trim();if(!nm){E.cgN.focus();return}
+    S.gps.push({name:nm,desc:E.cgDe.value.trim(),at:Date.now(),members:[{name:S.nm||"Du",ch:S.ch||"male",sk:S.sk,wh:S.wh,me:true}]});sv();
+    E.cgM.classList.remove("show");updGrp();
+    toast('<i class="fa-solid fa-users"></i> Group created!',"t-ok")
+  });
+
+  E.gdBk.addEventListener("click",closeGroupDetail);
+  E.gdInv.addEventListener("click",function(){
+    if(curGroupIdx>=0&&S.gps[curGroupIdx])copyGroupInvite(S.gps[curGroupIdx].name);
+  });
+  E.gdEmCta.addEventListener("click",function(){
+    if(curGroupIdx>=0&&S.gps[curGroupIdx])copyGroupInvite(S.gps[curGroupIdx].name);
+  });
+  E.gdAB.addEventListener("click",function(){addSimulatedMember(E.gdAI)});
+  E.gdAI.addEventListener("keydown",function(e){if(e.key==="Enter")addSimulatedMember(E.gdAI)});
+  E.gdEAB.addEventListener("click",function(){addSimulatedMember(E.gdEAI)});
+  E.gdEAI.addEventListener("keydown",function(e){if(e.key==="Enter")addSimulatedMember(E.gdEAI)});
+  E.gmCl.addEventListener("click",closeMemberPopup);
+  E.gmP.addEventListener("click",function(e){if(e.target===E.gmP)closeMemberPopup()});
+
+  E.tpSeg.addEventListener("click",function(e){
+    var opt=e.target.closest(".tp-opt");if(!opt)return;
+    var newDpw=parseInt(opt.getAttribute("data-dpw"),10);
+    var curDpw=dpwFromRd(S.rd);
+    if(newDpw===curDpw)return;
+    if(S.sk>0){
+      pendingDpw=newDpw;
+      E.sacSk.textContent="\uD83D\uDD25 "+S.sk+" Tage";
+      E.sacM.classList.add("show");
+    }else{
+      S.rd=rdFromDpw(newDpw);sv();updProfile();
+      toast('<i class="fa-solid fa-check"></i> Trainingsplan geändert');
+    }
+  });
+  E.sacOk.addEventListener("click",function(){
+    if(pendingDpw===null)return;
+    S.sk=0;S.cc=0;S.rd=rdFromDpw(pendingDpw);S.ts=null;S.dt=null;
+    if(typeof useSupabase!=="undefined"&&useSupabase){supaChangeRhythm(pendingDpw)}
+    pendingDpw=null;sv();
+    E.sacM.classList.remove("show");
+    if(E.mCir){E.mCir.classList.add("mascot-puff");setTimeout(function(){E.mCir.classList.remove("mascot-puff")},850)}
+    updAll();
+    toast('<i class="fa-solid fa-fire-flame-curved"></i> Streak zurückgesetzt — neuer Rhythmus aktiv',"t-fr");
+  });
+  E.sacNo.addEventListener("click",function(){pendingDpw=null;E.sacM.classList.remove("show")});
+  E.sacM.addEventListener("click",function(e){if(e.target===E.sacM){pendingDpw=null;E.sacM.classList.remove("show")}});
+
+  var logoutBtn=document.getElementById("prLogoutBtn");
+  if(logoutBtn){
+    logoutBtn.addEventListener("click",async function(){
+      if(!confirm("Abmelden?"))return;
+      try{if(typeof signOut==="function")await signOut()}catch(e){}
+      localStorage.removeItem(SK);S=def();sv();supaUser=null;
+      E.tbar.classList.add("hidden");E.tb.classList.add("hidden");
+      E.hm.classList.add("hidden");E.lb.classList.add("hidden");E.sh.classList.add("hidden");E.gr.classList.add("hidden");E.pr.classList.add("hidden");
+      setAuthMode(false);obCur=1;goStep(1);E.ob.classList.remove("hidden");curTab="home"
+    });
+  }
+
+  E.prRst.addEventListener("click",function(){
+    if(!confirm("Bist du sicher? Alle Daten werden gelöscht."))return;
+    localStorage.removeItem(SK);S=def();sv();
+    E.tbar.classList.add("hidden");E.tb.classList.add("hidden");
+    E.hm.classList.add("hidden");E.lb.classList.add("hidden");E.sh.classList.add("hidden");E.gr.classList.add("hidden");E.pr.classList.add("hidden");
+    obCur=1;goStep(1);
+    E.ob.classList.remove("hidden");curTab="home"
+  })
+}
+
+function updAll(){
+  norm();sv();
+  if(!S.ok){
+    E.ob.classList.remove("hidden");
+    E.hm.classList.add("hidden");E.lb.classList.add("hidden");E.sh.classList.add("hidden");E.gr.classList.add("hidden");E.pr.classList.add("hidden");
+    E.tb.classList.add("hidden");E.tbar.classList.add("hidden");
+    return
+  }
+  E.ob.classList.add("hidden");E.tb.classList.remove("hidden");E.tbar.classList.remove("hidden");
+  setT(curTab);updHome();updateMascotHeatmap();updLb();updShop();updGrp();updProfile();showR()
+}
+
+bind();
+
+// ── SUPABASE BRIDGE ──────────────────────────────────────────────────
+var useSupabase = typeof isSupabaseConfigured === "function" && isSupabaseConfigured();
+var supaUser = null;
+
+function showSupaWarn() {
+  var w = document.getElementById("supaWarn");
+  if (w) w.style.display = "block";
+}
+
+function hideSupaWarn() {
+  var w = document.getElementById("supaWarn");
+  if (w) w.style.display = "none";
+}
+
+function showEmailConfirm() {
+  document.getElementById("emailConfirmScreen").classList.remove("hidden");
+  document.getElementById("emailConfirmScreen").style.display = "grid";
+}
+function hideEmailConfirm() {
+  document.getElementById("emailConfirmScreen").classList.add("hidden");
+  document.getElementById("emailConfirmScreen").style.display = "none";
+}
+document.getElementById("emailConfirmBack").addEventListener("click", function() {
+  hideEmailConfirm(); goStep(1);
+});
+updateAuthFormState();
+
+function profileToState(p) {
+  S.ok = !!(p && p.onboarding_completed);
+  S.nm = p.username || S.nm;
+  S.ch = p.character || S.ch || "male";
+  S.sk = p.current_streak || 0;
+  S.cc = p.cycle_count || 0;
+  S.co = p.coins || 0;
+  S.fz = p.freezer_count || 1;
+  S.rd = p.workout_rhythm || 1;
+  S.ts = p.last_workout_ts || null;
+  S.dt = p.next_due_ts || null;
+  S.ra = p.streak_reset_at || null;
+  S.um = p.unlocked_milestones || [];
+  if (p.avatar_url) S.pic = p.avatar_url;
+}
+
+function hasCompletedOnboarding(profile) {
+  return !!(profile && profile.onboarding_completed);
+}
+
+function syncOnboardingFromProfile(profile) {
+  if (!profile) return;
+  if (profile.username) {
+    S.nm = profile.username;
+    if (E.inN && !E.inN.value.trim()) E.inN.value = profile.username;
+  }
+  selChar = profile.character || selChar || "male";
+  selR = Number(profile.workout_rhythm) || selR || 1;
+}
+
+async function supaLoadProfile() {
+  try {
+    var p = await normalizeStreak();
+    if (!p) return null;
+    profileToState(p);
+    syncOnboardingFromProfile(p);
+    var wh = await fetchWorkoutHistory(30);
+    S.wh = wh.map(function(w) {
+      return { t: w.type, cat: w.category, dur: w.duration, at: new Date(w.created_at).getTime() };
+    });
+    sv();
+    return p;
+  } catch (err) {
+    console.error("[supaLoadProfile]", err);
+    return null;
+  }
+}
+
+async function supaLogWorkout() {
+  if (!useSupabase) { logW(); return; }
+  try {
+    norm(); if (!canCk()) return;
+    var wt = E.wkTy ? E.wkTy.value : "fullbody";
+    var dur = E.wkDu ? Math.max(1, Math.min(300, parseInt(E.wkDu.value, 10) || 45)) : 45;
+    var meta = WK_META[wt] || { l: "Workout", c: "Kraft" };
+
+    var result = await logWorkout(wt, meta.c, dur);
+    profileToState(result.profile);
+    S.wh.push({ t: wt, cat: meta.c, dur: dur, at: Date.now() });
+    sv(); celeb(); ckMs(); updAll();
+    toast('<i class="fa-solid fa-circle-check"></i> ' + esc(meta.l) + ' (' + dur + 'min) geloggt! +10 Coins', "t-co");
+    if (result.earnedFreezer) setTimeout(function() { toast('<i class="fa-regular fa-snowflake"></i> +1 Freezer earned!', "t-fr") }, 700);
+  } catch (err) {
+    toast('<i class="fa-solid fa-triangle-exclamation"></i> Fehler: ' + esc(err.message), "t-fr");
+  }
+}
+
+async function supaCreateGroup() {
+  if (!useSupabase) return;
+  try {
+    var nm = E.cgN.value.trim(); if (!nm) { E.cgN.focus(); return; }
+    var desc = E.cgDe.value.trim();
+    await createGroup(nm, desc);
+    E.cgM.classList.remove("show");
+    await supaRefreshGroups();
+    toast('<i class="fa-solid fa-users"></i> Gruppe erstellt!', "t-ok");
+  } catch (err) {
+    toast('<i class="fa-solid fa-triangle-exclamation"></i> ' + esc(err.message), "t-fr");
+  }
+}
+
+async function supaJoinGroup() {
+  var codeInput = document.getElementById("joinCodeInput");
+  if (!codeInput) return;
+  var code = codeInput.value.trim();
+  if (!code) { codeInput.focus(); return; }
+  try {
+    var group = await joinGroup(code);
+    codeInput.value = "";
+    await supaRefreshGroups();
+    toast('<i class="fa-solid fa-user-plus"></i> "' + esc(group.name) + '" beigetreten!', "t-ok");
+  } catch (err) {
+    toast('<i class="fa-solid fa-triangle-exclamation"></i> ' + esc(err.message), "t-fr");
+  }
+}
+
+async function supaRefreshGroups() {
+  try {
+    var groups = await fetchUserGroups();
+    S.gps = groups.map(function(g) {
+      return { id: g.id, name: g.name, desc: g.description, code: g.invite_code, adminId: g.admin_id, at: new Date(g.created_at).getTime(), members: [] };
+    });
+    sv(); updGrp();
+  } catch (err) {
+    console.error("[supaRefreshGroups]", err);
+  }
+}
+
+async function supaOpenGroupDetail(group) {
+  try {
+    var ranking = await getGroupRanking(group.id);
+    var session = await getSession();
+    var myId = session ? session.user.id : null;
+
+    var members = ranking.map(function(r) {
+      return {
+        name: r.username,
+        ch: r.character || "male",
+        sk: r.current_streak,
+        today: r.last_workout_ts ? (Date.now() - r.last_workout_ts < 86400000) : false,
+        wh: [],
+        me: r.user_id === myId,
+        userId: r.user_id
+      };
+    });
+
+    E.grMn.classList.add("hidden");
+    E.gdV.classList.remove("hidden");
+    E.gdNm.textContent = group.name;
+    E.gdCt.textContent = members.length + " Mitglieder";
+
+    if (members.length <= 1) {
+      document.getElementById("gdRankSection").style.display = "";
+      document.getElementById("gdEmpty").classList.remove("hidden");
+    } else {
+      document.getElementById("gdRankSection").style.display = "";
+      document.getElementById("gdEmpty").classList.add("hidden");
+    }
+
+    renderGroupLb(members);
+  } catch (err) {
+    toast('<i class="fa-solid fa-triangle-exclamation"></i> ' + esc(err.message), "t-fr");
+  }
+}
+
+async function supaSignUp() {
+  var em = E.inE ? E.inE.value.trim() : "";
+  var pw = E.inP ? E.inP.value : "";
+  var pc = E.inPC ? E.inPC.value : "";
+  var nm = deriveUsernameFromEmail(em);
+  if (!isValidEmail(em)) { updateEmailError(); if (E.inE) E.inE.focus(); return; }
+  if (pw !== pc) { updatePasswordConfirmError(); if (E.inPC) E.inPC.focus(); return; }
+  if (!pw || pw.length < 6) { toast('<i class="fa-solid fa-lock"></i> Passwort min. 6 Zeichen', "t-fr"); return; }
+
+  try {
+    var result = await signUp(em, pw, nm);
+    S.em = em;
+    S.nm = nm;
+    if (result.needsConfirmation) {
+      showEmailConfirm();
+    } else {
+      showOnboarding(3);
+    }
+  } catch (err) {
+    toast('<i class="fa-solid fa-triangle-exclamation"></i> ' + esc(getAuthErrorMessage(err)), "t-fr");
+  }
+}
+
+async function supaSignIn() {
+  var em = E.inE ? E.inE.value.trim() : "";
+  var pw = E.inP ? E.inP.value : "";
+  if (!isValidEmail(em)) { updateEmailError(); if (E.inE) E.inE.focus(); return; }
+  if (!pw) { toast('<i class="fa-solid fa-circle-exclamation"></i> E-Mail und Passwort eingeben', "t-fr"); return; }
+
+  try {
+    await signIn(em, pw);
+    var profile = await supaLoadProfile();
+    if (hasCompletedOnboarding(profile)) {
+      trHome(); updAll();
+    } else {
+      showOnboarding(3);
+    }
+  } catch (err) {
+    toast('<i class="fa-solid fa-triangle-exclamation"></i> ' + esc(getAuthErrorMessage(err)), "t-fr");
+  }
+}
+
+async function supaFinishOnboarding() {
+  var nm = E.inN.value.trim() || S.nm || "Champ";
+  var ch = selChar || "male";
+  try {
+    await setupProfile(nm, ch, selR);
+    var profile = await supaLoadProfile();
+    if (hasCompletedOnboarding(profile)) {
+      trHome(); updAll();
+      return;
+    }
+    throw new Error("Profil konnte nicht vollständig eingerichtet werden.");
+  } catch (err) {
+    toast('<i class="fa-solid fa-triangle-exclamation"></i> ' + esc(err.message), "t-fr");
+  }
+}
+
+async function supaChangeRhythm(newDpw) {
+  if (!useSupabase) return;
+  try {
+    var newRd = rdFromDpw(newDpw);
+    await updateProfile({
+      current_streak: 0,
+      cycle_count: 0,
+      workout_rhythm: newRd,
+      last_workout_ts: null,
+      next_due_ts: null
+    });
+    S.sk = 0; S.cc = 0; S.rd = newRd; S.ts = null; S.dt = null;
+    sv();
+  } catch (err) {
+    console.error("[supaChangeRhythm]", err);
+  }
+}
+
+async function supaBuyFreezer(coinCost, fzCount) {
+  if (!useSupabase) return;
+  try {
+    var p = await buyFreezer(coinCost, fzCount);
+    profileToState(p); sv(); updAll();
+  } catch (err) {
+    toast('<i class="fa-solid fa-triangle-exclamation"></i> ' + esc(err.message), "t-fr");
+  }
+}
+
+async function supaStartCoinCheckout(packageId) {
+  if (!useSupabase) return;
+  try {
+    console.log("[supaStartCoinCheckout] Click received:", { packageId, useSupabase: useSupabase });
+    var result = await createCoinCheckoutSession(packageId, window.location.origin + window.location.pathname);
+    console.log("[supaStartCoinCheckout] Result:", result);
+    if (!result || !result.url) throw new Error("Stripe Checkout konnte nicht geöffnet werden.");
+    window.location.assign(result.url);
+  } catch (err) {
+    console.error("[supaStartCoinCheckout] Failed:", err);
+    toast('<i class="fa-solid fa-triangle-exclamation"></i> ' + esc(err.message), "t-fr");
+  }
+}
+
+async function handleCheckoutReturn() {
+  if (!useSupabase) return;
+
+  var params = new URLSearchParams(window.location.search);
+  var checkoutState = params.get("checkout");
+  var sessionId = params.get("session_id");
+
+  if (checkoutState === "cancelled") {
+    clearCheckoutParams();
+    toast('<i class="fa-solid fa-credit-card"></i> Zahlung abgebrochen.', "t-fr");
+    return;
+  }
+
+  if (checkoutState !== "success" || !sessionId) return;
+
+  var purchase = null;
+  for (var i = 0; i < 8; i++) {
+    purchase = await fetchPurchaseBySessionId(sessionId);
+    if (purchase && purchase.status === "completed") break;
+    await new Promise(function(resolve) { setTimeout(resolve, 1500); });
+  }
+
+  clearCheckoutParams();
+
+  if (purchase && purchase.status === "completed") {
+    var profile = await supaLoadProfile();
+    if (hasCompletedOnboarding(profile)) {
+      trHome(); updAll();
+    }
+    toast('<i class="fa-solid fa-coins"></i> ' + purchase.coins.toLocaleString("de-DE") + ' Coins gutgeschrieben!', "t-co");
+    return;
+  }
+
+  toast('<i class="fa-solid fa-hourglass-half"></i> Zahlung bestätigt. Coins werden in Kürze gutgeschrieben.', "t-ok");
+}
+
+async function supaInit() {
+  if (!useSupabase) {
+    showSupaWarn();
+    updAll();
+    return;
+  }
+  hideSupaWarn();
+
+  try {
+    var session = await getSession();
+    if (session) {
+      supaUser = session.user;
+      var profile = await supaLoadProfile();
+      await handleCheckoutReturn();
+      if (hasCompletedOnboarding(profile)) {
+        trHome(); updAll();
+      } else {
+        showOnboarding(3);
+      }
+    } else {
+      updAll();
+    }
+  } catch (err) {
+    console.error("[supaInit]", err);
+    showSupaWarn();
+    updAll();
+  }
+
+  onAuthChange(async function(event, session) {
+    if (event === "SIGNED_IN" && session) {
+      supaUser = session.user;
+      var profile = await supaLoadProfile();
+      await handleCheckoutReturn();
+      if (hasCompletedOnboarding(profile)) { trHome(); updAll(); }
+      else { showOnboarding(3); }
+    } else if (event === "SIGNED_OUT") {
+      supaUser = null;
+      localStorage.removeItem(SK);
+      S = def();
+      sv();
+      updAll();
+    }
+  });
+}
+
+
+// ── INIT ─────────────────────────────────────────────────────────────
+if (useSupabase) {
+  supaInit();
+} else {
+  updAll();
+}
+tick=setInterval(function(){if(S.ok){updHome()}},1000)
+})();
+</script>
+</body>
+</html>
