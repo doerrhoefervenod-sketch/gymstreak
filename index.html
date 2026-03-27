@@ -999,8 +999,25 @@ var E={
 function $(i){return document.getElementById(i)}
 
 var tick=null,curTab="home",selR=1,selChar=null,obCur=1,isLoginMode=false;
-function charImg(ch){return ch==="female"?"/flame-female.png":"/flame-male.png"}
-function charName(ch){return ch==="female"?"Ember":"Blaze"}
+function normalizeCharacterValue(ch){
+  var v=(ch||"").toString().trim().toLowerCase();
+  if(v==="ember"||v==="female"||v==="/flame-female.png"||v==="flame-female.png")return"female";
+  return"male";
+}
+function normalizeAssetPath(path){
+  var v=(path||"").toString().trim();
+  if(!v)return"";
+  if(/^https?:\/\//i.test(v)||v.indexOf("data:")===0||v.indexOf("blob:")===0)return v;
+  if(v==="flame-male.png"||v==="/flame-male.png")return"/flame-male.png";
+  if(v==="flame-female.png"||v==="/flame-female.png")return"/flame-female.png";
+  return v.charAt(0)==="/"?v:"/"+v;
+}
+function charImg(ch){return normalizeCharacterValue(ch)==="female"?"/flame-female.png":"/flame-male.png"}
+function profileImg(ch,avatarUrl){
+  var avatar=normalizeAssetPath(avatarUrl);
+  return avatar||charImg(ch);
+}
+function charName(ch){return normalizeCharacterValue(ch)==="female"?"Ember":"Blaze"}
 
 function def(){return{ok:false,nm:"",em:"",pic:"",rd:1,sk:0,fz:1,co:0,cc:0,um:[],ts:null,dt:null,ra:null,gps:[],ch:"male",wh:[]}}
 function load(){
@@ -1042,7 +1059,7 @@ function cdTx(){
 
 function updMascot(){
   var sk=S.sk,p=sk>0;
-  if(E.mImg){E.mImg.src=charImg(S.ch)}
+  if(E.mImg){E.mImg.src=profileImg(S.ch,S.pic);E.mImg.onerror=function(){this.onerror=null;this.src=charImg(S.ch)}}
   var gEl=document.querySelector(".mascot-glow");
   if(gEl){
     var op=sk<=0?.08:sk<=10?.20:sk<=30?.30:.42;
@@ -1054,7 +1071,7 @@ function updTopBar(){
   E.tbSk.textContent=S.sk;
   E.tbCo.textContent=S.co;
   E.tbFz.textContent=S.fz;
-  if(S.pic){E.tbAv.src=S.pic;E.tbAv.classList.remove("hidden")}
+  if(S.pic||S.ch){E.tbAv.src=profileImg(S.ch,S.pic);E.tbAv.onerror=function(){this.onerror=null;this.src=charImg(S.ch)};E.tbAv.classList.remove("hidden")}
   else{E.tbAv.classList.add("hidden")}
 }
 
@@ -1206,8 +1223,10 @@ function updGrp(){
 }
 
 function updProfile(){
-  if(S.pic){
-    E.prAv.innerHTML='<img src="'+esc(S.pic)+'" style="width:100%;height:100%;border-radius:50%;object-fit:cover"/>';
+  if(S.pic||S.ch){
+    E.prAv.innerHTML='<img src="'+esc(profileImg(S.ch,S.pic))+'" style="width:100%;height:100%;border-radius:50%;object-fit:cover"/>';
+    var prImg=E.prAv.querySelector("img");
+    if(prImg)prImg.onerror=function(){this.onerror=null;this.src=charImg(S.ch)};
   }else{
     E.prAv.textContent=(S.nm||"U").charAt(0).toUpperCase();
   }
@@ -1455,7 +1474,7 @@ function renderGroupLb(members){
     var st=m.today?'<div class="gd-st done"><i class="fa-solid fa-check"></i> Done</div>':'<div class="gd-st pend">Offen</div>';
 
     row.innerHTML='<div class="gd-rank">'+rk+'</div>'+
-      '<div class="'+avCls+'"><img src="'+charImg(m.ch)+'" alt=""/></div>'+
+      '<div class="'+avCls+'"><img src="'+profileImg(m.ch,m.avatar_url||m.pic)+'" alt="" onerror="this.onerror=null;this.src=\''+charImg(m.ch)+'\'"/></div>'+
       '<div class="gd-info"><div class="gd-mn">'+esc(m.name)+(m.me?'<span class="gd-mt">(Du)</span>':'')+'</div></div>'+
       '<div class="gd-sb"><i class="fa-solid fa-fire"></i> '+m.sk+'</div>'+st;
 
@@ -1470,8 +1489,10 @@ function openMemberPopup(member){
   E.gmP.classList.add("show");
   E.gmNm.textContent=member.name;
   E.gmSk.innerHTML='<i class="fa-solid fa-fire"></i> '+member.sk+'d Streak';
-  E.gmCI.src=charImg(member.ch);
-  E.gmHI.src=charImg(member.ch);
+  E.gmCI.src=profileImg(member.ch,member.avatar_url||member.pic);
+  E.gmHI.src=profileImg(member.ch,member.avatar_url||member.pic);
+  E.gmCI.onerror=function(){this.onerror=null;this.src=charImg(member.ch)};
+  E.gmHI.onerror=function(){this.onerror=null;this.src=charImg(member.ch)};
 
   var counts=computeHmCounts(member.wh);
   applyHmToSvg(counts,GM_EL_MAP,"gmGlow","gmSoft","gmAura","gmHead",member.sk);
@@ -1843,7 +1864,7 @@ updateAuthFormState();
 function profileToState(p) {
   S.ok = !!(p && p.onboarding_completed);
   S.nm = p.username || S.nm;
-  S.ch = p.character || S.ch || "male";
+  S.ch = normalizeCharacterValue(p.character || S.ch || "male");
   S.sk = p.current_streak || 0;
   S.cc = p.cycle_count || 0;
   S.co = p.coins || 0;
@@ -1853,7 +1874,7 @@ function profileToState(p) {
   S.dt = p.next_due_ts || null;
   S.ra = p.streak_reset_at || null;
   S.um = p.unlocked_milestones || [];
-  if (p.avatar_url) S.pic = p.avatar_url;
+  S.pic = normalizeAssetPath(p.avatar_url || S.pic || "");
 }
 
 function hasCompletedOnboarding(profile) {
@@ -1866,7 +1887,7 @@ function syncOnboardingFromProfile(profile) {
     S.nm = profile.username;
     if (E.inN && !E.inN.value.trim()) E.inN.value = profile.username;
   }
-  selChar = profile.character || selChar || "male";
+  selChar = normalizeCharacterValue(profile.character || selChar || "male");
   selR = Number(profile.workout_rhythm) || selR || 1;
 }
 
@@ -1957,7 +1978,7 @@ async function supaOpenGroupDetail(group) {
     var members = ranking.map(function(r) {
       return {
         name: r.username,
-        ch: r.character || "male",
+        ch: normalizeCharacterValue(r.character || "male"),
         sk: r.current_streak,
         today: r.last_workout_ts ? (Date.now() - r.last_workout_ts < 86400000) : false,
         wh: [],
