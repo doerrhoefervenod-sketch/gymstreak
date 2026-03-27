@@ -702,10 +702,11 @@
       <div class="ss" style="margin-top:8px">
         <div class="sec-title"><i class="fa-solid fa-users"></i>  MY GROUPS</div>
         <div id="grList"></div>
-        <div id="joinGroupSection" class="gd-add-section" style="margin-top:14px;max-width:100%">
+        <button id="joinGroupToggleBtn" class="gd-add-btn" style="margin-top:14px;width:100%"><i class="fa-solid fa-right-to-bracket"></i> Gruppe beitreten</button>
+        <div id="joinGroupSection" class="gd-add-section hidden" style="margin-top:14px;max-width:100%">
           <div class="gd-add-label">Gruppe beitreten (Einladungscode)</div>
           <div class="gd-add-row">
-            <input id="joinCodeInput" class="gd-add-input" placeholder="Einladungscode eingeben" maxlength="20"/>
+            <input id="joinCodeInput" class="gd-add-input" placeholder="ABC123" maxlength="6" style="text-transform:uppercase"/>
             <button id="joinCodeBtn" class="gd-add-btn"><i class="fa-solid fa-right-to-bracket"></i> Beitreten</button>
           </div>
         </div>
@@ -718,32 +719,25 @@
         <div class="gd-top-info">
           <div class="gd-name" id="gdName">Group</div>
           <div class="gd-count" id="gdCount">0 Mitglieder</div>
+          <div id="gdInviteCodeWrap" class="gd-add-section hidden" style="margin-top:10px;max-width:320px;padding:10px 12px">
+            <div class="gd-add-label">Dein Einladungscode</div>
+            <div class="gd-add-row">
+              <input id="gdInviteCode" class="gd-add-input" readonly />
+              <button id="gdInviteCopy" class="gd-add-btn"><i class="fa-regular fa-copy"></i> Kopieren</button>
+            </div>
+          </div>
         </div>
-        <button id="gdInvite" class="gd-invite"><i class="fa-solid fa-user-plus"></i> Einladen</button>
+        <button id="gdInvite" class="gd-invite"><i class="fa-regular fa-copy"></i> Code kopieren</button>
       </div>
       <div id="gdRankSection">
         <div class="sec-title"><i class="fa-solid fa-ranking-star"></i>  RANKING</div>
         <div id="gdList"></div>
-        <div class="gd-add-section" id="gdAddSection" style="margin-top:14px">
-          <div class="gd-add-label">Mitglied hinzufügen (Simulation)</div>
-          <div class="gd-add-row">
-            <input id="gdAddInput" class="gd-add-input" placeholder="Benutzername eingeben" maxlength="20"/>
-            <button id="gdAddBtn" class="gd-add-btn"><i class="fa-solid fa-plus"></i> Hinzufügen</button>
-          </div>
-        </div>
       </div>
       <div id="gdEmpty" class="gd-empty hidden">
         <div class="gd-empty-icon"><i class="fa-solid fa-users-slash"></i></div>
         <div class="gd-empty-title">Noch keine Mitstreiter hier!</div>
-        <div class="gd-empty-sub">Gemeinsam bleibt man eher am Ball. Lade Freunde ein oder füge Mitglieder hinzu.</div>
-        <button id="gdEmptyCta" class="gd-empty-cta"><i class="fa-solid fa-paper-plane"></i>  FREUNDE EINLADEN</button>
-        <div class="gd-add-section">
-          <div class="gd-add-label">Mitglied hinzufügen (Simulation)</div>
-          <div class="gd-add-row">
-            <input id="gdEmptyAddInput" class="gd-add-input" placeholder="Benutzername eingeben" maxlength="20"/>
-            <button id="gdEmptyAddBtn" class="gd-add-btn"><i class="fa-solid fa-plus"></i> Hinzufügen</button>
-          </div>
-        </div>
+        <div class="gd-empty-sub">Teile den Einladungscode mit Freunden, damit sie mit dem echten Beitrittscode deiner Gruppe beitreten können.</div>
+        <button id="gdEmptyCta" class="gd-empty-cta"><i class="fa-regular fa-copy"></i>  CODE KOPIEREN</button>
       </div>
     </div>
   </div></section>
@@ -908,7 +902,7 @@ import {
   getGroupRanking,
   getSession,
   isSupabaseConfigured,
-  joinGroup,
+  joinGroupByCode,
   logWorkout,
   normalizeStreak,
   onAuthChange,
@@ -984,10 +978,11 @@ var E={
   lbL:$("lbList"),shCo:$("shCoins"),fG:$("frzGrid"),cG:$("coinGrid"),cpSec:$("coinPackSection"),msL:$("msList"),
   rP:$("rPop"),rD:$("rDis"),
   ref:$("refUrl"),cpB:$("copyBtn"),waB:$("waBtn"),frL:$("frList"),grL:$("grList"),
+  jGTg:$("joinGroupToggleBtn"),jGS:$("joinGroupSection"),jGI:$("joinCodeInput"),jGB:$("joinCodeBtn"),
   cgB:$("cgBtn"),cgM:$("cgModal"),cgCl:$("cgClose"),cgN:$("cgName"),cgDe:$("cgDesc"),cgSv:$("cgSave"),
   grMn:$("grMain"),gdV:$("gdView"),gdBk:$("gdBack"),gdNm:$("gdName"),gdCt:$("gdCount"),gdInv:$("gdInvite"),gdLs:$("gdList"),
+  gdICW:$("gdInviteCodeWrap"),gdIC:$("gdInviteCode"),gdICC:$("gdInviteCopy"),
   gdRk:$("gdRankSection"),gdEm:$("gdEmpty"),gdEmCta:$("gdEmptyCta"),
-  gdAI:$("gdAddInput"),gdAB:$("gdAddBtn"),gdEAI:$("gdEmptyAddInput"),gdEAB:$("gdEmptyAddBtn"),
   gmP:$("gmPopup"),gmCl:$("gmClose"),gmNm:$("gmName"),gmSk:$("gmStreak"),gmCI:$("gmCharImg"),gmHI:$("gmHmImg"),gmBr:$("gmBars"),
   mImg:$("mascotImg"),mCir:$("mascotCircle"),
   wkM:$("wkModal"),wkCl:$("wkClose"),wkTy:$("wkType"),wkDu:$("wkDur"),wkSv:$("wkSave"),
@@ -1018,6 +1013,23 @@ function profileImg(ch,avatarUrl){
   return avatar||charImg(ch);
 }
 function charName(ch){return normalizeCharacterValue(ch)==="female"?"Ember":"Blaze"}
+function normalizeInviteCode(code){return(code||"").toString().toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,6)}
+function isGroupAdmin(group){
+  return !!(group&&supaUser&&group.adminId&&group.adminId===supaUser.id);
+}
+function groupInviteLink(group){
+  if(!group||!group.code)return"";
+  return window.location.origin+"/?join="+encodeURIComponent(group.code);
+}
+function updateGroupInviteUi(group){
+  var isAdmin=isGroupAdmin(group);
+  if(E.gdICW)E.gdICW.classList.toggle("hidden",!isAdmin||!group||!group.code);
+  if(E.gdIC)E.gdIC.value=isAdmin&&group&&group.code?group.code:"";
+  if(E.gdInv){
+    E.gdInv.innerHTML=isAdmin?'<i class="fa-regular fa-copy"></i> Code kopieren':'<i class="fa-solid fa-user-group"></i> Gruppe';
+    E.gdInv.disabled=!group;
+  }
+}
 
 function def(){return{ok:false,nm:"",em:"",pic:"",rd:1,sk:0,fz:1,co:0,cc:0,um:[],ts:null,dt:null,ra:null,gps:[],ch:"male",wh:[]}}
 function load(){
@@ -1197,8 +1209,8 @@ function updShop(){
 function updGrp(){
   var code=(S.nm||"USER").toUpperCase().replace(/\s/g,"").substring(0,8)+"123";
   E.ref.value="gymstreak.app/join/"+code;
-  var joinSec=document.getElementById("joinGroupSection");
-  if(joinSec)joinSec.style.display=(typeof useSupabase!=="undefined"&&useSupabase)?"block":"none";
+  if(E.jGTg)E.jGTg.style.display=(typeof useSupabase!=="undefined"&&useSupabase)?"block":"none";
+  if(E.jGS&&typeof useSupabase!=="undefined"&&!useSupabase)E.jGS.classList.add("hidden");
   E.frL.innerHTML="";
   FRIENDS.forEach(function(f){
     var d=document.createElement("div");d.className="fr-row";
@@ -1212,8 +1224,9 @@ function updGrp(){
     var mc=g.members?g.members.length:1;
     var avgSk=0;if(g.members)g.members.forEach(function(m){avgSk+=m.sk||0});
     avgSk=mc>0?Math.round(avgSk/mc):0;
+    var codeMeta=g.code?'<div class="gc-meta">Code: <strong>'+esc(g.code)+'</strong></div>':'';
     var d=document.createElement("div");d.className="gc";
-    d.innerHTML='<div class="gc-info"><div class="gc-name">'+esc(g.name)+'</div><div class="gc-meta">'+mc+' Mitglied'+(mc>1?'er':'')+' \u00b7 \u00d8 Streak '+avgSk+'d</div></div><button class="gc-view">View</button>';
+    d.innerHTML='<div class="gc-info"><div class="gc-name">'+esc(g.name)+'</div><div class="gc-meta">'+mc+' Mitglied'+(mc>1?'er':'')+' \u00b7 \u00d8 Streak '+avgSk+'d</div>'+codeMeta+'</div><button class="gc-view">View</button>';
     var btn=d.querySelector(".gc-view");
     (function(group,idx){btn.addEventListener("click",function(e){e.stopPropagation();
       if(typeof useSupabase!=="undefined"&&useSupabase&&group.id){supaOpenGroupDetail(group)}else{openGroupDetail(group,idx)}
@@ -1405,6 +1418,7 @@ function openGroupDetail(group,gIdx){
   E.grMn.classList.add("hidden");
   E.gdV.classList.remove("hidden");
   E.gdNm.textContent=group.name;
+  updateGroupInviteUi(group);
   ensureGroupMembers(group);
   syncMeInGroup(group);
 
@@ -1418,43 +1432,20 @@ function openGroupDetail(group,gIdx){
   renderGroupLb(members);
   E.gdRk.classList.remove("hidden");
   E.gdEm.classList.toggle("hidden",!soloAdmin);
-  var addSec=document.getElementById("gdAddSection");
-  if(addSec)addSec.classList.toggle("hidden",soloAdmin);
 }
 
 function closeGroupDetail(){
   curGroupIdx=-1;
+  updateGroupInviteUi(null);
   E.gdV.classList.add("hidden");
   E.grMn.classList.remove("hidden");
 }
 
-function addSimulatedMember(inputEl){
-  var nm=inputEl.value.trim();
-  if(!nm)return inputEl.focus();
-  if(curGroupIdx<0||!S.gps[curGroupIdx])return;
-  var chars=["male","female"];
-  var ch=chars[Math.floor(Math.random()*chars.length)];
-  var sk=Math.floor(Math.random()*30)+1;
-  var wh=genSimWh(sk);
-  S.gps[curGroupIdx].members.push({name:nm,ch:ch,sk:sk,today:Math.random()>0.4,wh:wh,me:false});
-  sv();
-  inputEl.value="";
-  toast('<i class="fa-solid fa-user-plus"></i> '+esc(nm)+' beigetreten!',"t-ok");
-  openGroupDetail(S.gps[curGroupIdx],curGroupIdx);
-}
-
-function genSimWh(sk){
-  var wh=[],now=Date.now(),types=["fullbody","pushpull","legs","back","chest","core","run","swim","bike","box","yoga"];
-  var count=Math.round(sk*0.4)+2;
-  for(var i=0;i<count;i++){
-    var t=types[Math.floor(Math.random()*types.length)];
-    wh.push({t:t,cat:(WK_META[t]||{c:"Kraft"}).c,dur:30+Math.floor(Math.random()*40),at:now-Math.floor(Math.random()*30)*DM});
-  }
-  return wh;
-}
-
 function copyGroupInvite(groupName){
-  var txt="Tritt meiner GymStreak-Gruppe bei! Gruppe: "+groupName;
+  var group=typeof groupName==="object"?groupName:null;
+  var title=group?group.name:groupName;
+  var code=group&&group.code?group.code:"";
+  var txt=code?"Tritt meiner GymStreak-Gruppe bei! Code: "+code+" "+groupInviteLink(group):"Tritt meiner GymStreak-Gruppe bei! Gruppe: "+title;
   navigator.clipboard.writeText(txt).then(function(){toast('<i class="fa-solid fa-paper-plane"></i> Einladungstext kopiert!',"t-ok")});
 }
 
@@ -1743,31 +1734,35 @@ function bind(){
   E.waB.addEventListener("click",function(){window.open("https://wa.me/?text="+encodeURIComponent("Join me on GymStreak! "+E.ref.value),"_blank")});
 
   E.cgB.addEventListener("click",function(){E.cgM.classList.add("show");E.cgN.value="";E.cgDe.value=""});
-  var joinBtn=document.getElementById("joinCodeBtn");
-  var joinInput=document.getElementById("joinCodeInput");
-  if(joinBtn){joinBtn.addEventListener("click",function(){supaJoinGroup()})}
-  if(joinInput){joinInput.addEventListener("keydown",function(e){if(e.key==="Enter")supaJoinGroup()})}
+  if(E.jGTg){E.jGTg.addEventListener("click",function(){
+    if(E.jGS)E.jGS.classList.toggle("hidden");
+    if(E.jGI&&!E.jGS.classList.contains("hidden"))E.jGI.focus();
+  })}
+  if(E.jGB){E.jGB.addEventListener("click",function(){supaJoinGroup()})}
+  if(E.jGI){
+    E.jGI.addEventListener("input",function(){E.jGI.value=normalizeInviteCode(E.jGI.value)});
+    E.jGI.addEventListener("keydown",function(e){if(e.key==="Enter")supaJoinGroup()})
+  }
   E.cgCl.addEventListener("click",function(){E.cgM.classList.remove("show")});
   E.cgM.addEventListener("click",function(e){if(e.target===E.cgM)E.cgM.classList.remove("show")});
   E.cgSv.addEventListener("click",function(){
     if(typeof useSupabase!=="undefined"&&useSupabase){supaCreateGroup();return}
     var nm=E.cgN.value.trim();if(!nm){E.cgN.focus();return}
-    S.gps.push({name:nm,desc:E.cgDe.value.trim(),at:Date.now(),members:[{name:S.nm||"Du",ch:S.ch||"male",sk:S.sk,wh:S.wh,me:true}]});sv();
+    S.gps.push({name:nm,desc:E.cgDe.value.trim(),code:normalizeInviteCode(Math.random().toString(36).slice(2,8)),at:Date.now(),members:[{name:S.nm||"Du",ch:S.ch||"male",sk:S.sk,wh:S.wh,me:true}]});sv();
     E.cgM.classList.remove("show");updGrp();
     toast('<i class="fa-solid fa-users"></i> Group created!',"t-ok")
   });
 
   E.gdBk.addEventListener("click",closeGroupDetail);
   E.gdInv.addEventListener("click",function(){
-    if(curGroupIdx>=0&&S.gps[curGroupIdx])copyGroupInvite(S.gps[curGroupIdx].name);
+    if(curGroupIdx>=0&&S.gps[curGroupIdx])copyGroupInvite(S.gps[curGroupIdx]);
   });
+  if(E.gdICC){E.gdICC.addEventListener("click",function(){
+    if(E.gdIC&&E.gdIC.value){navigator.clipboard.writeText(E.gdIC.value).then(function(){toast('<i class="fa-regular fa-copy"></i> Code kopiert!',"t-ok")})}
+  })}
   E.gdEmCta.addEventListener("click",function(){
-    if(curGroupIdx>=0&&S.gps[curGroupIdx])copyGroupInvite(S.gps[curGroupIdx].name);
+    if(curGroupIdx>=0&&S.gps[curGroupIdx])copyGroupInvite(S.gps[curGroupIdx]);
   });
-  E.gdAB.addEventListener("click",function(){addSimulatedMember(E.gdAI)});
-  E.gdAI.addEventListener("keydown",function(e){if(e.key==="Enter")addSimulatedMember(E.gdAI)});
-  E.gdEAB.addEventListener("click",function(){addSimulatedMember(E.gdEAI)});
-  E.gdEAI.addEventListener("keydown",function(e){if(e.key==="Enter")addSimulatedMember(E.gdEAI)});
   E.gmCl.addEventListener("click",closeMemberPopup);
   E.gmP.addEventListener("click",function(e){if(e.target===E.gmP)closeMemberPopup()});
 
@@ -1943,15 +1938,26 @@ async function supaCreateGroup() {
 }
 
 async function supaJoinGroup() {
-  var codeInput = document.getElementById("joinCodeInput");
+  var codeInput = E.jGI;
   if (!codeInput) return;
-  var code = codeInput.value.trim();
+  var code = normalizeInviteCode(codeInput.value);
   if (!code) { codeInput.focus(); return; }
   try {
-    var group = await joinGroup(code);
+    var group = await joinGroupByCode(code);
     codeInput.value = "";
+    if (E.jGS) E.jGS.classList.add("hidden");
     await supaRefreshGroups();
-    toast('<i class="fa-solid fa-user-plus"></i> "' + esc(group.name) + '" beigetreten!', "t-ok");
+    toast('<i class="fa-solid fa-user-plus"></i> "' + esc(group.name) + '" beigetreten! Code: ' + esc(group.invite_code || code), "t-ok");
+    var joinedGroup = null;
+    for (var i = 0; i < S.gps.length; i++) {
+      if (S.gps[i].id === group.id) {
+        joinedGroup = S.gps[i];
+        break;
+      }
+    }
+    if (joinedGroup) {
+      await supaOpenGroupDetail(joinedGroup);
+    }
   } catch (err) {
     toast('<i class="fa-solid fa-triangle-exclamation"></i> ' + esc(err.message), "t-fr");
   }
@@ -1991,6 +1997,7 @@ async function supaOpenGroupDetail(group) {
     E.gdV.classList.remove("hidden");
     E.gdNm.textContent = group.name;
     E.gdCt.textContent = members.length + " Mitglieder";
+    updateGroupInviteUi(group);
 
     if (members.length <= 1) {
       document.getElementById("gdRankSection").style.display = "";

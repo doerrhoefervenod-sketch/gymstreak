@@ -51,6 +51,23 @@ function fallbackUsernameForUser(user) {
   return `${safeBase}_${suffix}`;
 }
 
+function normalizeInviteCode(value) {
+  return (value || "")
+    .toString()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 6);
+}
+
+function generateInviteCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i += 1) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
 async function ensureProfileRow() {
   const client = requireSupabase();
   const session = await getSession();
@@ -393,13 +410,26 @@ export async function createGroup(name, description) {
     if (!session) throw new Error("Not authenticated");
     const uid = session.user.id;
 
-    const { data: group, error: gErr } = await client
-      .from("groups")
-      .insert({ name, description, admin_id: uid })
-      .select()
-      .single();
+    let group = null;
+    let gErr = null;
 
-    if (gErr) throw gErr;
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const inviteCode = generateInviteCode();
+      const result = await client
+        .from("groups")
+        .insert({ name, description, admin_id: uid, invite_code: inviteCode })
+        .select()
+        .single();
+
+      group = result.data;
+      gErr = result.error;
+
+      if (!gErr) break;
+      if (gErr.code !== "23505") throw gErr;
+      if (!/invite_code/i.test(gErr.message || "")) throw gErr;
+    }
+
+    if (gErr || !group) throw gErr || new Error("Gruppe konnte nicht erstellt werden.");
 
     const { error: mErr } = await client
       .from("group_members")
@@ -418,29 +448,28 @@ export async function joinGroup(inviteCode) {
     const client = requireSupabase();
     const session = await getSession();
     if (!session) throw new Error("Not authenticated");
+    const normalizedCode = normalizeInviteCode(inviteCode);
+    if (!normalizedCode || normalizedCode.length !== 6) {
+      throw new Error("Bitte gib einen gültigen 6-stelligen Einladungscode ein.");
+    }
+    const { data, error } = await client.rpc("join_group_by_code", {
+      p_invite_code: normalizedCode
+    });
 
-    const { data: group, error: gErr } = await client
-      .from("groups")
-      .select("id, name")
-      .eq("invite_code", inviteCode.trim().toLowerCase())
-      .single();
-
-    if (gErr || !group) throw new Error("Gruppe nicht gefunden. Prüfe den Einladungscode.");
-
-    const { error: mErr } = await client
-      .from("group_members")
-      .insert({ group_id: group.id, user_id: session.user.id });
-
-    if (mErr) {
-      if (mErr.code === "23505") throw new Error("Du bist bereits in dieser Gruppe.");
-      throw mErr;
+    if (error) throw error;
+    if (!data || !data.length) {
+      throw new Error("Gruppe nicht gefunden. Prüfe den Einladungscode.");
     }
 
-    return group;
+    return data[0];
   } catch (err) {
     console.error("[joinGroup]", err.message);
     throw err;
   }
+}
+
+export async function joinGroupByCode(inviteCode) {
+  return joinGroup(inviteCode);
 }
 
 export async function fetchUserGroups() {

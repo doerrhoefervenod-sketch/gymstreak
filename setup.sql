@@ -5,6 +5,32 @@
 
 create extension if not exists pgcrypto;
 
+create or replace function public.generate_invite_code()
+returns text
+language plpgsql
+as $$
+declare
+  chars text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  candidate text := '';
+  idx integer;
+begin
+  loop
+    candidate := '';
+    for idx in 1..6 loop
+      candidate := candidate || substr(chars, floor(random() * length(chars) + 1)::int, 1);
+    end loop;
+
+    if not exists (
+      select 1
+      from public.groups
+      where invite_code = candidate
+    ) then
+      return candidate;
+    end if;
+  end loop;
+end
+$$;
+
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   username text unique not null,
@@ -68,7 +94,7 @@ create table if not exists public.groups (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   description text,
-  invite_code text not null unique default lower(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8)),
+  invite_code text not null unique default public.generate_invite_code(),
   admin_id uuid not null references public.profiles(id) on delete cascade,
   created_at timestamptz not null default now()
 );
@@ -78,6 +104,11 @@ alter table public.groups add column if not exists description text;
 alter table public.groups add column if not exists invite_code text;
 alter table public.groups add column if not exists admin_id uuid;
 alter table public.groups add column if not exists created_at timestamptz not null default now();
+alter table public.groups alter column invite_code set default public.generate_invite_code();
+
+update public.groups
+set invite_code = public.generate_invite_code()
+where invite_code is null or btrim(invite_code) = '';
 
 create table if not exists public.group_members (
   group_id uuid not null references public.groups(id) on delete cascade,
@@ -367,6 +398,69 @@ as $$
     where gm_me.user_id = p_viewer_user_id
       and gm_other.user_id = p_target_user_id
   );
+$$;
+
+create or replace function public.join_group_by_code(p_invite_code text)
+returns table (
+  id uuid,
+  name text,
+  description text,
+  invite_code text,
+  admin_id uuid,
+  created_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  normalized_code text;
+  target_group public.groups%rowtype;
+  current_user_id uuid;
+begin
+  current_user_id := auth.uid();
+
+  if current_user_id is null then
+    raise exception 'Not authenticated';
+  end if;
+
+  normalized_code := upper(regexp_replace(coalesce(p_invite_code, ''), '[^A-Za-z0-9]', '', 'g'));
+
+  if length(normalized_code) <> 6 then
+    raise exception 'Bitte gib einen gültigen 6-stelligen Einladungscode ein.';
+  end if;
+
+  select *
+  into target_group
+  from public.groups g
+  where upper(g.invite_code) = normalized_code
+  limit 1;
+
+  if not found then
+    raise exception 'Gruppe nicht gefunden. Prüfe den Einladungscode.';
+  end if;
+
+  if exists (
+    select 1
+    from public.group_members gm
+    where gm.group_id = target_group.id
+      and gm.user_id = current_user_id
+  ) then
+    raise exception 'Du bist bereits in dieser Gruppe.';
+  end if;
+
+  insert into public.group_members (group_id, user_id)
+  values (target_group.id, current_user_id);
+
+  return query
+  select
+    target_group.id,
+    target_group.name,
+    target_group.description,
+    target_group.invite_code,
+    target_group.admin_id,
+    target_group.created_at;
+end;
 $$;
 
 create or replace function public.apply_purchase_credit(
