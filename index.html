@@ -516,12 +516,12 @@
           <div class="char-grid">
             <div class="char-card" data-char="male">
               <div class="char-card-check"><i class="fa-solid fa-check"></i></div>
-              <div class="character-circle"><img src="flame-male.png" alt="Blaze"/></div>
+              <div class="character-circle"><img src="/flame-male.png" alt="Blaze"/></div>
               <div class="char-card-name">Blaze</div>
             </div>
             <div class="char-card" data-char="female">
               <div class="char-card-check"><i class="fa-solid fa-check"></i></div>
-              <div class="character-circle"><img src="flame-female.png" alt="Ember"/></div>
+              <div class="character-circle"><img src="/flame-female.png" alt="Ember"/></div>
               <div class="char-card-name">Ember</div>
             </div>
           </div>
@@ -550,7 +550,7 @@
         <div class="ob-step-inner">
           <div class="ready-mascot-wrap">
             <div class="ready-glow"></div>
-            <div class="character-circle ready-mascot-circle"><img id="readyMascotImg" src="flame-male.png" alt="Your Character"/></div>
+            <div class="character-circle ready-mascot-circle"><img id="readyMascotImg" src="/flame-male.png" alt="Your Character"/></div>
           </div>
           <div class="ready-charname" id="readyCharName">Blaze</div>
           <div class="ready-headline" id="readyHeadline">Let's go! 🔥</div>
@@ -586,7 +586,7 @@
       <div class="mwrap">
         <div class="mascot-glow"></div>
         <div id="mascotCircle" class="character-circle mascot-circle">
-          <img id="mascotImg" src="flame-male.png" alt="Flame Mascot"/>
+          <img id="mascotImg" src="/flame-male.png" alt="Flame Mascot"/>
           <svg class="hm-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <filter id="hmSoft"><feGaussianBlur stdDeviation="2.5"/></filter>
@@ -852,7 +852,7 @@
   <div class="gm-card">
     <button id="gmClose" class="wk-close"><i class="fa-solid fa-xmark"></i></button>
     <div class="gm-hdr">
-      <div class="gm-av"><img id="gmCharImg" src="flame-male.png" alt=""/></div>
+      <div class="gm-av"><img id="gmCharImg" src="/flame-male.png" alt=""/></div>
       <div>
         <div class="gm-nm" id="gmName">User</div>
         <div class="gm-sk" id="gmStreak"><i class="fa-solid fa-fire"></i> 0</div>
@@ -860,7 +860,7 @@
     </div>
     <div class="gm-sec"><i class="fa-solid fa-fire-flame-curved"></i> WAS TRAINIERT DEIN RIVALE?</div>
     <div class="gm-hm" id="gmHmBody">
-      <img id="gmHmImg" src="flame-male.png" alt=""/>
+      <img id="gmHmImg" src="/flame-male.png" alt=""/>
       <svg class="hm-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <filter id="gmSoft"><feGaussianBlur stdDeviation="2.5"/></filter>
@@ -999,7 +999,7 @@ var E={
 function $(i){return document.getElementById(i)}
 
 var tick=null,curTab="home",selR=1,selChar=null,obCur=1,isLoginMode=false;
-function charImg(ch){return ch==="female"?"flame-female.png":"flame-male.png"}
+function charImg(ch){return ch==="female"?"/flame-female.png":"/flame-male.png"}
 function charName(ch){return ch==="female"?"Ember":"Blaze"}
 
 function def(){return{ok:false,nm:"",em:"",pic:"",rd:1,sk:0,fz:1,co:0,cc:0,um:[],ts:null,dt:null,ra:null,gps:[],ch:"male",wh:[]}}
@@ -1577,9 +1577,11 @@ function deriveUsernameFromEmail(email){
 function getAuthErrorMessage(err){
   var msg=((err&&err.message)||"").trim();
   var code=((err&&err.code)||"").trim();
+  console.error("[getAuthErrorMessage]", { code: code, message: msg, error: err });
   if(msg==="Invalid login credentials"||code==="invalid_credentials"||/invalid login credentials/i.test(msg))return "E-Mail oder Passwort falsch";
   if(msg==="User already registered"||code==="user_already_exists"||/already registered/i.test(msg))return "Diese E-Mail ist bereits registriert";
   if(msg==="Email not confirmed"||code==="email_not_confirmed"||/email not confirmed/i.test(msg))return "Bitte bestätige zuerst deine E-Mail";
+  if(/database error saving new user/i.test(msg))return "Supabase kann neue Nutzer aktuell nicht in der Datenbank anlegen. Bitte prüfe Trigger und Tabellen im Production-Projekt.";
   if(code==="over_email_send_rate_limit"||/rate limit/i.test(msg))return "Bitte kurz warten und es dann erneut versuchen";
   if(/database error/i.test(msg))return "Login gerade nicht möglich. Bitte prüfe dein Supabase-Setup.";
   return msg||"Ein Fehler ist aufgetreten";
